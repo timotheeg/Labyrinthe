@@ -32,11 +32,14 @@ $(function(){
 
 function handleComplete() {
 	stage = new createjs.Stage("board");
+	ctrl_stage = new createjs.Stage("ctrl");
 	createjs.Ticker.addEventListener("tick", tick);
 
+	ctrl_piece = getPiece( getRandom(tile_names) );
+	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
+	ctrl_stage.addChild(ctrl_piece);
 	
-	ctrl_piece = getRandom(tile_names)
-	$('#piece').append(queue.getResult(ctrl_piece));
+	ctrl_piece.addEventListener('click', rotateControl);
 	
 	// create a dumy stage for now
 	// TODO: setup fixed tiles like on the real board
@@ -60,11 +63,12 @@ function handleComplete() {
 		}
 	}
 	
-	stage.update();
+	tick();
 }
 
 function tick() {
 	stage.update();
+	ctrl_stage.update();
 }
 
 function handleClick(evt) {
@@ -75,7 +79,7 @@ function handleClick(evt) {
 	
 	// for demo purposes, x takes priority
 	if (data.row_idx <= 0) {
-		var piece = getPiece(ctrl_piece);
+		var piece = getPiece(ctrl_piece.lab_meta.name, ctrl_piece.lab_meta.rotation);
 		var col_idx = data.col_idx;
 		
 		piece.x = HALF_SIZE + col_idx * TILE_SIZE;
@@ -100,11 +104,17 @@ function shiftComplete(data, piece) {
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
 	
-	var to_remove = grid7x7[GRID_TILE_SIZE-1][data.col_idx]
+	var to_remove = grid7x7[GRID_TILE_SIZE-1][data.col_idx];
 	
-	ctrl_piece = to_remove.lab_meta.name;
 	to_remove.removeEventListener('click', handleClick);
+	ctrl_piece.removeEventListener('click', rotateControl);
 	stage.removeChild(to_remove);
+	ctrl_stage.removeChild(ctrl_piece);
+	
+	ctrl_piece = to_remove;
+	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
+	ctrl_piece.addEventListener('click', rotateControl);
+	ctrl_stage.addChild(ctrl_piece);
 	
 	for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
 		grid7x7[row_idx][data.col_idx] = grid7x7[row_idx-1][data.col_idx];
@@ -120,15 +130,29 @@ function shiftComplete(data, piece) {
 	animating = false;
 }
 
-function getPiece(name) {
+function rotateControl(evt) {
+	if (rotateControl.rotating) return;
+	rotateControl.rotating = true;
+	
+	console.log(evt.target);
+	
+	var bitmap = evt.currentTarget.lab_meta.bitmap;
+	createjs.Tween.get(bitmap).to({rotation: bitmap.rotation + 90}, 200).call(function() {
+		evt.currentTarget.lab_meta.rotation = bitmap.rotation;
+		delete rotateControl.rotating;
+	});
+}
+
+function getPiece(name, rotation) {
 	if (!name) name = getRandom(tile_names);
+	if (rotation === undefined) rotation = Math.floor(Math.random() * 4) * 90;
 
 	var bitmap = new createjs.Bitmap(queue.getResult(name));
 
 	bitmap.snapToPixel = true;
 	bitmap.regX = bitmap.regY = HALF_SIZE;
 	bitmap.x = bitmap.y = HALF_SIZE;
-	bitmap.rotation = Math.floor(Math.random() * 4) * 90;
+	bitmap.rotation = rotation;
 
 	var mc = new createjs.Container();
 	
