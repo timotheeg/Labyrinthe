@@ -4,11 +4,11 @@ var HALF_SIZE = TILE_SIZE / 2;
 
 var tiles = {
 	T: 'img/tiles/T.png',
-	corner: 'img/tiles/corner.png',
-	straight: 'img/tiles/straight.png'
+	c: 'img/tiles/corner.png',
+	s: 'img/tiles/straight.png'
 };
 
-var tile_names = ['T', 'corner', 'straight'];
+var tile_names = ['T', 'c', 's'];
 
 var stage;
 var queue;
@@ -30,24 +30,37 @@ $(function(){
 
 function handleComplete() {
 	stage = new createjs.Stage("board");
+	
+	stage.addChild
+	
+	
 	ctrl_stage = new createjs.Stage("ctrl");
 	createjs.Ticker.addEventListener("tick", tick);
 	
 	addTriangleControls();
 
-	ctrl_piece = getPiece( getRandom(tile_names) );
+	board_setup = JSON.parse(board_setup); // TODO make this come from server
+	
+	var board = board_setup.board;
+	
+	console.log(board_setup);
+
+	ctrl_piece = getPiece( board_setup.ctrl );
 	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
 	ctrl_stage.addChild(ctrl_piece);
 	
 	ctrl_piece.addEventListener('click', rotateControl);
-	
-	// create a dumy stage for now
-	// TODO: setup fixed tiles like on the real board
 
 	for (var row_idx=0; row_idx<GRID_TILE_SIZE; row_idx++) {
 		for (var col_idx=0; col_idx<GRID_TILE_SIZE; col_idx++) {
-		
-			var mc = getPiece();
+			var mc;
+			
+			if (board[row_idx][col_idx]) {
+				mc = getPiece(board[row_idx][col_idx][0], board[row_idx][col_idx][1]);
+			}
+			else {
+				mc = getPiece();
+			}
 			mc.x = HALF_SIZE + col_idx * TILE_SIZE;
 			mc.y = HALF_SIZE + row_idx * TILE_SIZE;
 			mc.lab_meta.row_idx = row_idx;
@@ -237,7 +250,7 @@ function rotateControl(evt) {
 
 function getPiece(name, rotation) {
 	if (!name) name = getRandom(tile_names);
-	if (rotation === undefined) rotation = Math.floor(Math.random() * 4) * 90;
+	if (rotation === undefined || rotation === -1) rotation = Math.floor(Math.random() * 4) * 90;
 
 	var bitmap = new createjs.Bitmap(queue.getResult(name));
 
@@ -352,12 +365,6 @@ function getTriangleGraphic() {
 	shape.regY = 28;
 
 	return shape;
-}
-
-// http://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
-function shuffle(o) {
-    for(var j, x, i = o.length; i; j = Math.floor(Math.random() * i), x = o[--i], o[i] = o[j], o[j] = x);
-    return o;
 }
 
 function getRandom(arr) {
