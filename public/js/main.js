@@ -26,14 +26,14 @@ $(function(){
 	for (var key in tiles) {
 		queue.loadFile({id: key, src: tiles[key]});
 	}
-	
-	handleComplete()
 });
 
 function handleComplete() {
 	stage = new createjs.Stage("board");
 	ctrl_stage = new createjs.Stage("ctrl");
 	createjs.Ticker.addEventListener("tick", tick);
+	
+	addTriangleControls();
 
 	ctrl_piece = getPiece( getRandom(tile_names) );
 	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
@@ -55,10 +55,6 @@ function handleComplete() {
 			
 			grid7x7[row_idx][col_idx] = mc;
 			
-			if (!row_idx || !col_idx || row_idx >= GRID_TILE_SIZE-1 || col_idx >= GRID_TILE_SIZE-1) {
-				mc.addEventListener('click', handleClick);
-			}
-			
 			stage.addChild(mc);
 		}
 	}
@@ -71,63 +67,159 @@ function tick() {
 	ctrl_stage.update();
 }
 
-function handleClick(evt) {
+function shiftTiles(data) {
 	if (animating) return;
 	animating = true;
 
-	var data = evt.currentTarget.lab_meta;
+	// var piece = getPiece(ctrl_piece.lab_meta.name, ctrl_piece.lab_meta.rotation);
+	var piece = ctrl_piece;
 	
-	// for demo purposes, x takes priority
-	if (data.row_idx <= 0) {
-		var piece = getPiece(ctrl_piece.lab_meta.name, ctrl_piece.lab_meta.rotation);
-		var col_idx = data.col_idx;
-		
-		piece.x = HALF_SIZE + col_idx * TILE_SIZE;
-		piece.y = -HALF_SIZE + data.row_idx * TILE_SIZE;
+	stage.addChild(piece);
+	
+	if (data.row_idx) {
+		piece.y = HALF_SIZE + data.row_idx * TILE_SIZE;
 		piece.lab_meta.row_idx = data.row_idx;
-		piece.lab_meta.col_idx = col_idx;
 		
-		stage.addChild(piece);
-		
-		createjs.Tween.get(piece).to({y: piece.y + TILE_SIZE}, 500).call(shiftComplete, [data, piece]);
-		
-		// we need to animate all pieces
-		for (var row_idx=0; row_idx<GRID_TILE_SIZE; row_idx++) {
-			var mc = grid7x7[row_idx][data.col_idx];
-			createjs.Tween.get(mc).to({y: mc.y + TILE_SIZE}, 500);
+		if (data.direction > 0) {
+			piece.x = -TILE_SIZE;
+			piece.lab_meta.col_idx = 0;
+
+			createjs.Tween.get(piece)
+				.to({x: piece.x + HALF_SIZE}, 250)
+				.to({x: piece.x + HALF_SIZE + TILE_SIZE}, 500);
+			
+			// we need to animate all pieces
+			for (var col_idx=0; col_idx<GRID_TILE_SIZE-1; col_idx++) {
+				var mc = grid7x7[data.row_idx][col_idx];
+				createjs.Tween.get(mc).wait(250).to({x: mc.x + TILE_SIZE}, 500);
+			}
+			
+			// last piece must slide out of canvas
+			var mc = grid7x7[data.row_idx][GRID_TILE_SIZE-1];
+			createjs.Tween.get(mc)
+				.wait(250)
+				.to({x: mc.x + TILE_SIZE}, 500)
+				.to({x: mc.x + TILE_SIZE + HALF_SIZE}, 250)
+				.call(shiftComplete, [data, piece, mc]);
+		}
+		else {
+			piece.x = (GRID_TILE_SIZE+1) * TILE_SIZE;
+			piece.lab_meta.col_idx = GRID_TILE_SIZE-1;
+
+			createjs.Tween.get(piece)
+				.to({x: piece.x - HALF_SIZE}, 250)
+				.to({x: piece.x - HALF_SIZE - TILE_SIZE}, 500);
+			
+			// we need to animate all pieces
+			for (var col_idx=GRID_TILE_SIZE; col_idx-->1; ) {
+				var mc = grid7x7[data.row_idx][col_idx];
+				createjs.Tween.get(mc).wait(250).to({x: mc.x - TILE_SIZE}, 500);
+			}
+			
+			// last piece must slide out of canvas
+			var mc = grid7x7[data.row_idx][0];
+			createjs.Tween.get(mc)
+				.wait(250)
+				.to({x: mc.x - TILE_SIZE}, 500)
+				.to({x: mc.x - TILE_SIZE - HALF_SIZE}, 250)
+				.call(shiftComplete, [data, piece, mc]);
 		}
 	}
-}
+	else {
+		piece.x = HALF_SIZE + data.col_idx * TILE_SIZE;
+		piece.lab_meta.col_idx = data.col_idx;
+		
+		if (data.direction > 0) {
+			piece.y = -TILE_SIZE;
+			piece.lab_meta.row_idx = 0;
 
-function shiftComplete(data, piece) {
+			createjs.Tween.get(piece)
+				.to({y: piece.y + HALF_SIZE}, 250)
+				.to({y: piece.y + HALF_SIZE + TILE_SIZE}, 500);
+			
+			// we need to animate all pieces
+			for (var row_idx=0; row_idx<GRID_TILE_SIZE-1; row_idx++) {
+				var mc = grid7x7[row_idx][data.col_idx];
+				createjs.Tween.get(mc).wait(250).to({y: mc.y + TILE_SIZE}, 500);
+			}
+			
+			// last piece must slide out of canvas
+			var mc = grid7x7[GRID_TILE_SIZE-1][data.col_idx];
+			createjs.Tween.get(mc)
+				.wait(250)
+				.to({y: mc.y + TILE_SIZE}, 500)
+				.to({y: mc.y + TILE_SIZE + HALF_SIZE}, 250)
+				.call(shiftComplete, [data, piece, mc]);
+		}
+		else {
+			piece.y = (GRID_TILE_SIZE+1) * TILE_SIZE;
+			piece.lab_meta.row_idx = GRID_TILE_SIZE-1;
+
+			createjs.Tween.get(piece)
+				.to({y: piece.y - HALF_SIZE}, 250)
+				.to({y: piece.y - HALF_SIZE - TILE_SIZE}, 500);
+			
+			// we need to animate all pieces
+			for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
+				var mc = grid7x7[row_idx][data.col_idx];
+				createjs.Tween.get(mc).wait(250).to({y: mc.y - TILE_SIZE}, 500);
+			}
+			
+			// last piece must slide out of canvas
+			var mc = grid7x7[0][data.col_idx];
+			createjs.Tween.get(mc)
+				.wait(250)
+				.to({y: mc.y - TILE_SIZE}, 500)
+				.to({y: mc.y - TILE_SIZE - HALF_SIZE}, 250)
+				.call(shiftComplete, [data, piece, mc]);
+		}
+	}
+} 
+
+function shiftComplete(data, added_piece, ejected_piece) {
+	animating = false;
+
 	console.log(data, piece);
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
 	
-	var to_remove = grid7x7[GRID_TILE_SIZE-1][data.col_idx];
-	
-	to_remove.removeEventListener('click', handleClick);
 	ctrl_piece.removeEventListener('click', rotateControl);
-	stage.removeChild(to_remove);
+	stage.removeChild(ejected_piece);
 	ctrl_stage.removeChild(ctrl_piece);
 	
-	ctrl_piece = to_remove;
+	ctrl_piece = ejected_piece;
 	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
 	ctrl_piece.addEventListener('click', rotateControl);
 	ctrl_stage.addChild(ctrl_piece);
-	
-	for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
-		grid7x7[row_idx][data.col_idx] = grid7x7[row_idx-1][data.col_idx];
-	}
-	
-	grid7x7[1][data.col_idx].removeEventListener('click', handleClick);
 
-	grid7x7[0][data.col_idx] = piece
-	
-	piece.addEventListener('click', handleClick);
-	grid7x7[GRID_TILE_SIZE-1][data.col_idx].addEventListener('click', handleClick);
-	
-	animating = false;
+	if (data.row_idx) {
+		if (data.direction >= 1) {
+			for (var col_idx=GRID_TILE_SIZE; col_idx-->1; ) {
+				grid7x7[data.row_idx][col_idx] = grid7x7[data.row_idx][col_idx - 1];
+			}
+			grid7x7[data.row_idx][0] = added_piece;
+		}
+		else {
+			for (var col_idx=0; col_idx<GRID_TILE_SIZE-1; col_idx++) {
+				grid7x7[data.row_idx][col_idx] = grid7x7[data.row_idx][col_idx + 1];
+			}
+			grid7x7[data.row_idx][GRID_TILE_SIZE-1] = added_piece;
+		}
+	}
+	else {
+		if (data.direction >= 1) {
+			for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
+				grid7x7[row_idx][data.col_idx] = grid7x7[row_idx - 1][data.col_idx];
+			}
+			grid7x7[0][data.col_idx] = added_piece;
+		}
+		else {
+			for (var row_idx=0; row_idx<GRID_TILE_SIZE-1; row_idx++) {
+				grid7x7[row_idx][data.col_idx] = grid7x7[row_idx + 1][data.col_idx];
+			}
+			grid7x7[GRID_TILE_SIZE-1][data.col_idx] = added_piece;
+		}
+	}
 }
 
 function rotateControl(evt) {
@@ -167,6 +259,99 @@ function getPiece(name, rotation) {
 	};
 	
 	return mc;
+}
+
+function addTriangleControls() {
+	// get and position triangles
+	var button = new createjs.Container();
+	var mc = getTriangleGraphic();
+	mc.x = HALF_SIZE / 2;
+	mc.y = TILE_SIZE / 2;
+	button.addChild(mc);
+	button.x = 0;
+	button.y = HALF_SIZE + TILE_SIZE;
+	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: 1}) });
+	stage.addChild(button);
+	
+	button = button.clone(true);
+	button.y = HALF_SIZE + TILE_SIZE * 3;
+	button.addEventListener('click', function() { shiftTiles({row_idx: 3, direction: 1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.y = HALF_SIZE + TILE_SIZE * 5;
+	button.addEventListener('click', function() { shiftTiles({row_idx: 5, direction: 1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.children[0].rotation = 180;
+	button.x = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
+	button.y = HALF_SIZE + TILE_SIZE;
+	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: -1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.y = HALF_SIZE + TILE_SIZE * 3;
+	button.addEventListener('click', function() { shiftTiles({row_idx: 3, direction: -1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.y = HALF_SIZE + TILE_SIZE * 5;
+	button.addEventListener('click', function() { shiftTiles({row_idx: 5, direction: -1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.children[0].rotation = 90;
+	button.children[0].x = TILE_SIZE / 2;
+	button.children[0].y = HALF_SIZE / 2;
+	button.x = HALF_SIZE + TILE_SIZE;
+	button.y = 0;
+	button.addEventListener('click', function() { shiftTiles({col_idx: 1, direction: 1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.x = HALF_SIZE + TILE_SIZE * 3;
+	button.addEventListener('click', function() { shiftTiles({col_idx: 3, direction: 1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.x = HALF_SIZE + TILE_SIZE * 5;
+	button.addEventListener('click', function() { shiftTiles({col_idx: 5, direction: 1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.children[0].rotation = -90;
+	button.x = HALF_SIZE + TILE_SIZE;
+	button.y = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
+	button.addEventListener('click', function() { shiftTiles({col_idx: 1, direction: -1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.x = HALF_SIZE + TILE_SIZE * 3;
+	button.addEventListener('click', function() { shiftTiles({col_idx: 3, direction: -1}) });
+	stage.addChild(button);
+
+	button = button.clone(true);
+	button.x = HALF_SIZE + TILE_SIZE * 5;
+	button.addEventListener('click', function() { shiftTiles({col_idx: 5, direction: -1}) });
+	stage.addChild(button);
+}
+
+function getTriangleGraphic() {
+	// create one triangle pointing right
+	var g = new createjs.Graphics();
+	g.beginFill("orange");
+	g.moveTo(0,0);
+	g.lineTo(38, 28);
+	g.lineTo(0, 56);
+	g.endFill();
+	
+	var shape = new createjs.Shape(g);
+	
+	shape.regX = 19;
+	shape.regY = 28;
+
+	return shape;
 }
 
 // http://stackoverflow.com/questions/6274339/how-can-i-shuffle-an-array-in-javascript
