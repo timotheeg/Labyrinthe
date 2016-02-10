@@ -30,6 +30,7 @@ $(function(){
 
 function handleComplete() {
 	stage = new createjs.Stage("board");
+	stage.enableMouseOver(20); 
 	
 	stage.addChild
 	
@@ -284,6 +285,7 @@ function addTriangleControls() {
 	button.x = 0;
 	button.y = HALF_SIZE + TILE_SIZE;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: 1}) });
+	button.cursor = 'pointer';
 	stage.addChild(button);
 	
 	button = button.clone(true);
