@@ -10,6 +10,7 @@ var tiles = {
 
 var tile_names = ['T', 'c', 's'];
 
+var board;
 var stage;
 var queue;
 var ctrl_piece;
@@ -26,14 +27,18 @@ $(function(){
 	for (var key in tiles) {
 		queue.loadFile({id: key, src: tiles[key]});
 	}
+	
+	for (var key in treasure_tiles) {
+		queue.loadFile({id: key, src: 'img/treasures/' + key + '.png'});
+	}
 });
 
 function handleComplete() {
 	stage = new createjs.Stage("board");
 	stage.enableMouseOver(20); 
 	
-	stage.addChild
-	
+	board = new createjs.Container();
+	stage.addChild(board);
 	
 	ctrl_stage = new createjs.Stage("ctrl");
 	createjs.Ticker.addEventListener("tick", tick);
@@ -42,11 +47,8 @@ function handleComplete() {
 
 	board_setup = JSON.parse(board_setup); // TODO make this come from server
 	
-	var board = board_setup.board;
-	
-	console.log(board_setup);
-
 	ctrl_piece = getPiece( board_setup.ctrl );
+	
 	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
 	ctrl_stage.addChild(ctrl_piece);
 	
@@ -56,12 +58,13 @@ function handleComplete() {
 		for (var col_idx=0; col_idx<GRID_TILE_SIZE; col_idx++) {
 			var mc;
 			
-			if (board[row_idx][col_idx]) {
-				mc = getPiece(board[row_idx][col_idx][0], board[row_idx][col_idx][1]);
+			if (board_setup.board[row_idx][col_idx]) {
+				mc = getPiece(board_setup.board[row_idx][col_idx][0], board_setup.board[row_idx][col_idx][1]);
 			}
 			else {
 				mc = getPiece();
 			}
+
 			mc.x = HALF_SIZE + col_idx * TILE_SIZE;
 			mc.y = HALF_SIZE + row_idx * TILE_SIZE;
 			mc.lab_meta.row_idx = row_idx;
@@ -69,7 +72,7 @@ function handleComplete() {
 			
 			grid7x7[row_idx][col_idx] = mc;
 			
-			stage.addChild(mc);
+			board.addChild(mc);
 		}
 	}
 	
@@ -85,10 +88,9 @@ function shiftTiles(data) {
 	if (animating) return;
 	animating = true;
 
-	// var piece = getPiece(ctrl_piece.lab_meta.name, ctrl_piece.lab_meta.rotation);
 	var piece = ctrl_piece;
 	
-	stage.addChild(piece);
+	board.addChild(piece);
 	
 	if (data.row_idx) {
 		piece.y = HALF_SIZE + data.row_idx * TILE_SIZE;
@@ -193,7 +195,6 @@ function shiftTiles(data) {
 function shiftComplete(data, added_piece, ejected_piece) {
 	animating = false;
 
-	console.log(data, piece);
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
 	
@@ -240,11 +241,9 @@ function rotateControl(evt) {
 	if (rotateControl.rotating) return;
 	rotateControl.rotating = true;
 	
-	console.log(evt.target);
-	
-	var bitmap = evt.currentTarget.lab_meta.bitmap;
-	createjs.Tween.get(bitmap).to({rotation: bitmap.rotation + 90}, 200).call(function() {
-		evt.currentTarget.lab_meta.rotation = bitmap.rotation;
+	var mc = evt.currentTarget.lab_meta.mc;
+	createjs.Tween.get(mc).to({rotation: mc.rotation + 90}, 200).call(function() {
+		evt.currentTarget.lab_meta.rotation = mc.rotation;
 		delete rotateControl.rotating;
 	});
 }
@@ -253,26 +252,62 @@ function getPiece(name, rotation) {
 	if (!name) name = getRandom(tile_names);
 	if (rotation === undefined || rotation === -1) rotation = Math.floor(Math.random() * 4) * 90;
 
-	var bitmap = new createjs.Bitmap(queue.getResult(name));
+	var tile, treasure, bg, player_marker;
+	
+	if (treasure_tiles[name]) {
+		tile = treasure_tiles[name];
+		console.log(name, tile.t);
+		bg = new createjs.Bitmap(queue.getResult(tile.t));
+		treasure = new createjs.Bitmap(queue.getResult(name));
+	}
+	else if (player_tiles[name]) {
+		console.log(name);
+		var player_marker = new createjs.Shape();
+		player_marker.graphics
+			.setStrokeStyle(1)
+			.beginStroke('#000000')
+			.beginFill(player_tiles[name])
+			.drawCircle(HALF_SIZE+2, HALF_SIZE-2, 21);
+			
+		bg = new createjs.Bitmap(queue.getResult('c'));
+	}
+	else {
+		console.log(name);
+		bg = new createjs.Bitmap(queue.getResult(name));
+	}
 
-	bitmap.snapToPixel = true;
-	bitmap.regX = bitmap.regY = HALF_SIZE;
-	bitmap.x = bitmap.y = HALF_SIZE;
-	bitmap.rotation = rotation;
+	var piece = new createjs.Container();
+	piece.snapToPixel = true;
 
 	var mc = new createjs.Container();
-	
+	bg.snapToPixel = true;
 	mc.snapToPixel = true;
-	mc.addChild(bitmap);
+	mc.regX = mc.regY = HALF_SIZE;
+	mc.x = mc.y = HALF_SIZE;
+	mc.rotation = rotation;
+	mc.addChild(bg);
 	
-	mc.lab_meta = {
+	if (treasure) {
+		treasure.x = tile.x;
+		treasure.y = tile.y;
+		treasure.scaleX = treasure.scaleY = tile.s;
+		treasure.rotation = tile.r;
+		mc.addChild(treasure);
+	}
+	
+	if (player_marker) {
+		mc.addChild(player_marker);
+	}
+	
+	piece.addChild(mc);
+	
+	piece.lab_meta = {
 		mc: mc,
-		name: name,
-		bitmap: bitmap,
-		rotation: bitmap.rotation,
+		treasure: treasure,
+		rotation: mc.rotation
 	};
 	
-	return mc;
+	return piece;
 }
 
 function addTriangleControls() {
