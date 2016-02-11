@@ -1,3 +1,4 @@
+var BOARD_SIZE = 1080;
 var GRID_TILE_SIZE = 7;
 var TILE_SIZE = 135;
 var HALF_SIZE = TILE_SIZE / 2;
@@ -38,6 +39,9 @@ function handleComplete() {
 	stage.enableMouseOver(20); 
 	
 	board = new createjs.Container();
+	
+	board.x = board.y = board.regX = board.regY = BOARD_SIZE / 2;
+	
 	stage.addChild(board);
 	
 	ctrl_stage = new createjs.Stage("ctrl");
@@ -89,6 +93,8 @@ function shiftTiles(data) {
 	animating = true;
 
 	var piece = ctrl_piece;
+	
+	piece.lab_meta.mc.rotation -= board.rotation;
 	
 	board.addChild(piece);
 	
@@ -256,12 +262,10 @@ function getPiece(name, rotation) {
 	
 	if (treasure_tiles[name]) {
 		tile = treasure_tiles[name];
-		console.log(name, tile.t);
 		bg = new createjs.Bitmap(queue.getResult(tile.t));
 		treasure = new createjs.Bitmap(queue.getResult(name));
 	}
 	else if (player_tiles[name]) {
-		console.log(name);
 		var player_marker = new createjs.Shape();
 		player_marker.graphics
 			.setStrokeStyle(1)
@@ -272,7 +276,6 @@ function getPiece(name, rotation) {
 		bg = new createjs.Bitmap(queue.getResult('c'));
 	}
 	else {
-		console.log(name);
 		bg = new createjs.Bitmap(queue.getResult(name));
 	}
 
@@ -321,34 +324,34 @@ function addTriangleControls() {
 	button.y = HALF_SIZE + TILE_SIZE;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: 1}) });
 	button.cursor = 'pointer';
-	stage.addChild(button);
+	board.addChild(button);
 	
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 3;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 3, direction: 1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 5;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 5, direction: 1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.children[0].rotation = 180;
 	button.x = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
 	button.y = HALF_SIZE + TILE_SIZE;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: -1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 3;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 3, direction: -1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 5;
 	button.addEventListener('click', function() { shiftTiles({row_idx: 5, direction: -1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.children[0].rotation = 90;
@@ -357,34 +360,34 @@ function addTriangleControls() {
 	button.x = HALF_SIZE + TILE_SIZE;
 	button.y = 0;
 	button.addEventListener('click', function() { shiftTiles({col_idx: 1, direction: 1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 3;
 	button.addEventListener('click', function() { shiftTiles({col_idx: 3, direction: 1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 5;
 	button.addEventListener('click', function() { shiftTiles({col_idx: 5, direction: 1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.children[0].rotation = -90;
 	button.x = HALF_SIZE + TILE_SIZE;
 	button.y = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
 	button.addEventListener('click', function() { shiftTiles({col_idx: 1, direction: -1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 3;
 	button.addEventListener('click', function() { shiftTiles({col_idx: 3, direction: -1}) });
-	stage.addChild(button);
+	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 5;
 	button.addEventListener('click', function() { shiftTiles({col_idx: 5, direction: -1}) });
-	stage.addChild(button);
+	board.addChild(button);
 }
 
 function getTriangleGraphic() {
