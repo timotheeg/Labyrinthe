@@ -63,6 +63,15 @@ $(function(){
 	for (var key in treasure_tiles) {
 		queue.loadFile({id: key, src: 'img/treasures/' + key + '.png'});
 	}
+
+
+	$('#start').click(function() {
+		socket.emit('start');
+	});
+
+	$('#move').click(function() {
+		socket.emit('move');
+	});
 });
 
 function setupBoard(board_setup) {

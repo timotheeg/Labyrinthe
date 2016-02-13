@@ -25,6 +25,17 @@ function connectSocket()
 		console.log('registered', player);
 
 		me = player;
+
+		$('#next_treasure').css('background-image', 'url("/img/treasures/' + me.next_treasure + '.png")');
+
+		if (me.index <= 0) {
+			$('#start').show();
+		}
+		else {
+			$('#start').hide();
+		}
+
+		$('#card, #buttons').show();
 	});
 
 	socket.on('lab_error', function (data) {

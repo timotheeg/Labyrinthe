@@ -175,7 +175,7 @@ Game.prototype.nextTurn = function() {
 Game.prototype.shiftBoard = function(data) {
 	if (this.state != WAITING_SHIFT) return;
 
-	// TODO: shift local board
+	// shift local board
 
 	this.state = WAITING_MOVE;
 	this.broadcaster.emit('board_shift', data);
@@ -183,6 +183,9 @@ Game.prototype.shiftBoard = function(data) {
 
 Game.prototype.movePlayer = function(player, target) {
 	if (this.state != WAITING_MOVE) return;
+
+	// TODO: verify that player can move
+	// TODO: update player position in local board
 
 	this.broadcaster.emit('player_move', {
 		player: player.toPublicJSON(),

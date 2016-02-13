@@ -95,11 +95,42 @@ textarea {
    Author's custom styles
    ========================================================================== */
 
-#piece {
-	width: 1080px;
-	text-align: center;
+#ui_controls {
+    width: 1080px;
 }
 
+#card {
+    display: none;
+    float: left;
+    position: relative;
+    width: 179px;
+    height: 280px;
+    background: no-repeat url("/img/cards/front.png");
+    margin-right: 25px;
+}
+
+#next_treasure {
+    position: absolute;
+    top: 73px;
+    left: 23px;
+    width: 135px;
+    height: 135px;
+    background: no-repeat;
+}
+
+#piece {
+    float: left;
+    margin-right: 25px;
+}
+
+#buttons {
+    display: none;
+    margin: 1em 1em;
+}
+
+#buttons > * {
+    margin: 1em 1em;
+}
 
 
 
