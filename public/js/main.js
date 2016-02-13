@@ -13,7 +13,6 @@ var board;
 var stage;
 var queue;
 var ctrl_piece;
-var animating = false;
 
 // alias: c: corner, s: straight, T: T
 var treasure_tiles = {
@@ -55,7 +54,7 @@ for (var idx=GRID_TILE_SIZE; idx--;) grid7x7[idx] = new Array(GRID_TILE_SIZE);
 
 $(function(){
 	queue = new createjs.LoadQueue(false);
-	queue.on("complete", handleComplete, this);
+	queue.on("complete", connectSocket, this);
 	
 	for (var key in tiles) {
 		queue.loadFile({id: key, src: tiles[key]});
@@ -66,13 +65,14 @@ $(function(){
 	}
 });
 
-function handleComplete() {
+function setupBoard(board_setup) {
 	stage = new createjs.Stage("board");
 	stage.enableMouseOver(20); 
 	
 	board = new createjs.Container();
 	
 	board.x = board.y = board.regX = board.regY = BOARD_SIZE / 2;
+	board.rotation = me.rotation;
 	
 	stage.addChild(board);
 	
@@ -81,11 +81,9 @@ function handleComplete() {
 	
 	addTriangleControls();
 
-	board_setup = JSON.parse(board_setup); // TODO make this come from server
-	
 	ctrl_piece = getPiece( board_setup.ctrl );
 	
-	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
+	ctrl_piece.y = ctrl_piece.x = (191 - 135) / 2;
 	ctrl_stage.addChild(ctrl_piece);
 	
 	ctrl_piece.addEventListener('click', rotateControl);
@@ -121,12 +119,9 @@ function tick() {
 }
 
 function shiftTiles(data) {
-	if (animating) return;
-	animating = true;
-
 	var piece = ctrl_piece;
 	
-	piece.lab_meta.mc.rotation -= board.rotation;
+	piece.lab_meta.mc.rotation = data.ctrl_rotation;
 	
 	board.addChild(piece);
 	
@@ -231,17 +226,15 @@ function shiftTiles(data) {
 } 
 
 function shiftComplete(data, added_piece, ejected_piece) {
-	animating = false;
-
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
 	
 	ctrl_piece.removeEventListener('click', rotateControl);
 	stage.removeChild(ejected_piece);
 	ctrl_stage.removeChild(ctrl_piece);
-	
+
 	ctrl_piece = ejected_piece;
-	ctrl_piece.y = ctrl_piece.x = (191-135)/2;
+	ctrl_piece.y = ctrl_piece.x = (191 - 135) / 2;
 	ctrl_piece.addEventListener('click', rotateControl);
 	ctrl_stage.addChild(ctrl_piece);
 
@@ -273,15 +266,17 @@ function shiftComplete(data, added_piece, ejected_piece) {
 			grid7x7[GRID_TILE_SIZE-1][data.col_idx] = added_piece;
 		}
 	}
+
+	animation_done();
 }
 
 function rotateControl(evt) {
 	if (rotateControl.rotating) return;
 	rotateControl.rotating = true;
-	
+
 	var mc = evt.currentTarget.lab_meta.mc;
 	createjs.Tween.get(mc).to({rotation: mc.rotation + 90}, 200).call(function() {
-		evt.currentTarget.lab_meta.rotation = mc.rotation;
+		mc.rotation %= 360;
 		delete rotateControl.rotating;
 	});
 }
@@ -303,7 +298,7 @@ function getPiece(name, rotation) {
 			.beginStroke('#000000')
 			.beginFill(player_tiles[name])
 			.drawCircle(HALF_SIZE+2, HALF_SIZE-2, 21);
-			
+
 		bg = new createjs.Bitmap(queue.getResult('c'));
 	}
 	else {
@@ -337,11 +332,29 @@ function getPiece(name, rotation) {
 	
 	piece.lab_meta = {
 		mc: mc,
-		treasure: treasure,
-		rotation: mc.rotation
+		treasure: treasure
 	};
 	
 	return piece;
+}
+
+function requestShift(evt) {
+	if (current_player_index !== me.index) {
+		// TODO: visual feedback to show nothing will move
+		return;
+	}
+
+	socket.emit('shift', $.extend(
+		{
+			ctrl_rotation: (ctrl_piece.lab_meta.mc.rotation - me.rotation + 360) % 360
+		},
+		evt.currentTarget.action_data
+	));
+}
+
+function movePlayer() {
+	// TODO: move player on board
+	animation_done();
 }
 
 function addTriangleControls() {
@@ -353,35 +366,41 @@ function addTriangleControls() {
 	button.addChild(mc);
 	button.x = 0;
 	button.y = HALF_SIZE + TILE_SIZE;
-	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: 1}) });
+	button.action_data = {row_idx: 1, direction: 1};
+	button.addEventListener('click', requestShift);
 	button.cursor = 'pointer';
 	board.addChild(button);
 	
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 3;
-	button.addEventListener('click', function() { shiftTiles({row_idx: 3, direction: 1}) });
+	button.action_data = {row_idx: 3, direction: 1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 5;
-	button.addEventListener('click', function() { shiftTiles({row_idx: 5, direction: 1}) });
+	button.action_data = {row_idx: 5, direction: 1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.children[0].rotation = 180;
 	button.x = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
 	button.y = HALF_SIZE + TILE_SIZE;
-	button.addEventListener('click', function() { shiftTiles({row_idx: 1, direction: -1}) });
+	button.action_data = {row_idx: 1, direction: -1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 3;
-	button.addEventListener('click', function() { shiftTiles({row_idx: 3, direction: -1}) });
+	button.action_data = {row_idx: 3, direction: -1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 5;
-	button.addEventListener('click', function() { shiftTiles({row_idx: 5, direction: -1}) });
+	button.action_data = {row_idx: 5, direction: -1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
@@ -390,34 +409,40 @@ function addTriangleControls() {
 	button.children[0].y = HALF_SIZE / 2;
 	button.x = HALF_SIZE + TILE_SIZE;
 	button.y = 0;
-	button.addEventListener('click', function() { shiftTiles({col_idx: 1, direction: 1}) });
+	button.action_data = {col_idx: 1, direction: 1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 3;
-	button.addEventListener('click', function() { shiftTiles({col_idx: 3, direction: 1}) });
+	button.action_data = {col_idx: 3, direction: 1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 5;
-	button.addEventListener('click', function() { shiftTiles({col_idx: 5, direction: 1}) });
+	button.action_data = {col_idx: 5, direction: 1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.children[0].rotation = -90;
 	button.x = HALF_SIZE + TILE_SIZE;
 	button.y = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
-	button.addEventListener('click', function() { shiftTiles({col_idx: 1, direction: -1}) });
+	button.action_data = {col_idx: 1, direction: -1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 3;
-	button.addEventListener('click', function() { shiftTiles({col_idx: 3, direction: -1}) });
+	button.action_data = {col_idx: 3, direction: -1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 5;
-	button.addEventListener('click', function() { shiftTiles({col_idx: 5, direction: -1}) });
+	button.action_data = {col_idx: 5, direction: -1};
+	button.addEventListener('click', requestShift);
 	board.addChild(button);
 }
 

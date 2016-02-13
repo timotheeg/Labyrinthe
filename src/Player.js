@@ -1,24 +1,103 @@
+var util = require('util');
+
 module.exports = Player;
 
 function Player(player_index, socket, name, treasures) {
-	this.setName(name);
-
+	this.name = name;
 	this.index = player_index;
 	this.socket = socket;
+	this.is_current_player = false;
 
 	util._extend(this, Player.COLORS[player_index]);
 
 	this.treasures = treasures;
-	this.treasure_index = 0;
+	this.collected = 0;
+
+	this.listens();
+
+	socket.emit('registered', this.toPrivateJSON());
 }
 
 Player.COLORS = [
-	{color: 'yellow', rotation:   0, row_idx: 0, col_idx: 0},
-	{color: 'green',  rotation:  90, row_idx: 6, col_idx: 0},
-	{color: 'blue',   rotation: 180, row_idx: 6, col_idx: 6},
-	{color: 'red',    rotation: 270, row_idx: 0, col_idx: 6}
+	{color: 'yellow', rotation:   0, x: 0, y: 0},
+	{color: 'green',  rotation:  90, x: 6, y: 0},
+	{color: 'blue',   rotation: 180, x: 6, y: 6},
+	{color: 'red',    rotation: 270, x: 0, y: 6}
 ];
 
-Player.prototype.setName = function(name) {
-	this.name = name;
+Player.prototype.setGame = function(game) {
+	this.game = game;
+};
+
+Player.prototype.setCurrent = function(is_current) {
+	this.is_current_player = is_current;
+};
+
+Player.prototype.isCurrentPlayer = function() {
+	return this.is_current_player;
+};
+
+Player.prototype.toPrivateJSON = function() {
+	return {
+		x:             this.x,
+		y:             this.y,
+		index:         this.index,
+		color:         this.color,
+		rotation:      this.rotation,
+		collected:     this.collected,
+		next_treasure: this.treasures[this.collected],
+		done:          this.collected >= this.treasures.length
+	};
+};
+
+Player.prototype.toPublicJSON = function() {
+	return {
+		x:         this.x,
+		y:         this.y,
+		index:     this.index,
+		color:     this.color,
+		collected: this.collected,
+		done:      this.collected >= this.treasures.length
+	};
+};
+
+Player.prototype.acquireTreasure = function() {
+	this.collected++;
+
+	self.emit('collect_treasure', {
+		treasure:      this.treasures[this.collected],
+		next_treasure: this.treasures[++this.collected],
+		done:          this.collected >= this.treasures.length
+	});
+};
+
+Player.prototype.listens = function() {
+	var self = this;
+
+	this.socket.on('disconnect', function() {
+		self.game.removePlayer(self);
+	});
+
+	this.socket.on('start', function() {
+		if (!self.isCurrentPlayer()) return;
+
+		self.game.start();
+	});
+
+	this.socket.on('change_name', function(name) {
+		self.game.changePlayerName(player, self.name = name);
+	});
+
+	this.socket.on('shift', function(data) {
+		console.log('shift', self.isCurrentPlayer());
+		if (!self.isCurrentPlayer()) return;
+
+		self.game.shiftBoard(data);
+	});
+
+	this.socket.on('move', function(target) {
+		if (!self.isCurrentPlayer()) return;
+
+		self.game.movePlayer(self, target);
+	});
 };
