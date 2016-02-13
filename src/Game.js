@@ -175,7 +175,7 @@ Game.prototype.nextTurn = function() {
 Game.prototype.shiftBoard = function(data) {
 	if (this.state != WAITING_SHIFT) return;
 
-	// shift local board
+	this.board.shift(data);
 
 	this.state = WAITING_MOVE;
 	this.broadcaster.emit('board_shift', data);
