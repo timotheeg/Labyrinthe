@@ -9,8 +9,6 @@ var tiles = {
 	s: 'img/tiles/straight.png'
 };
 
-var tile_names = ['T', 'c', 's'];
-
 var board;
 var stage;
 var queue;
@@ -255,7 +253,6 @@ function rotateControl(evt) {
 }
 
 function getPiece(name, rotation) {
-	if (!name) name = getRandom(tile_names);
 	if (rotation === undefined || rotation === -1) rotation = Math.floor(Math.random() * 4) * 90;
 
 	var tile, treasure, bg, player_marker;
@@ -405,9 +402,4 @@ function getTriangleGraphic() {
 	shape.regY = 28;
 
 	return shape;
-}
-
-function getRandom(arr) {
-	var idx = Math.floor(Math.random() * arr.length);
-	return arr[idx];
 }
