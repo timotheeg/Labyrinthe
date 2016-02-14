@@ -94,7 +94,7 @@ Game.prototype.addPlayer = function(name, socket) {
 
 	// inform everyone the new player has arrived
 	this.broadcaster.emit('new_player', {
-		player: player.toPublicJSON()
+		player: player.toJSON()
 	});
 
 	if (this.players.length <= 1) {
@@ -115,7 +115,7 @@ Game.prototype.removePlayer = function(player) {
 	while (idx < this.players.length) {
 		var p = this.players[idx++];
 		p.index--;
-		player.socket.emit('registered', p.toPrivateJSON());
+		player.socket.emit('registered', p._toJSON());
 	}
 
 	if (this.players.length <= 0) {
@@ -140,7 +140,7 @@ Game.prototype.getBoard = function() {
 
 Game.prototype.getPlayers = function() {
 	return this.players.map(function(player) {
-		return player.toPublicJSON();
+		return player.toJSON();
 	});
 };
 
@@ -188,7 +188,7 @@ Game.prototype.movePlayer = function(player, target) {
 	// TODO: update player position in local board
 
 	this.broadcaster.emit('player_move', {
-		player: player.toPublicJSON(),
+		player: player.toJSON(),
 		target: target
 	});
 

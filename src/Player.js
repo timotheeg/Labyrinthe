@@ -15,7 +15,7 @@ function Player(player_index, socket, name, treasures) {
 
 	this.listens();
 
-	socket.emit('registered', this.toPrivateJSON());
+	socket.emit('registered', this._toJSON());
 }
 
 Player.COLORS = [
@@ -37,20 +37,18 @@ Player.prototype.isCurrentPlayer = function() {
 	return this.is_current_player;
 };
 
-Player.prototype.toPrivateJSON = function() {
-	return {
-		x:             this.x,
-		y:             this.y,
-		index:         this.index,
-		color:         this.color,
-		rotation:      this.rotation,
-		collected:     this.collected,
-		next_treasure: this.treasures[this.collected],
-		done:          this.collected >= this.treasures.length
-	};
+// private JSON
+Player.prototype._toJSON = function() {
+	var data = this.toJSON();
+	
+	data.rotation = this.rotation,
+	data.next_treasure = this.treasures[this.collected];
+
+	return data;
 };
 
-Player.prototype.toPublicJSON = function() {
+// public json
+Player.prototype.toJSON = function() {
 	return {
 		x:         this.x,
 		y:         this.y,
