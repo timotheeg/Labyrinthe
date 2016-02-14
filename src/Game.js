@@ -184,13 +184,40 @@ Game.prototype.shiftBoard = function(data) {
 Game.prototype.movePlayer = function(player, target) {
 	if (this.state != WAITING_MOVE) return;
 
-	// TODO: verify that player can move
-	// TODO: update player position in local board
+	var path = this.board.getPath(player.x, player.y, target.x, target.y);
 
-	this.broadcaster.emit('player_move', {
+	if (!path) {
+		// player is asking for an invalid move,
+		player.socket.emit('invalid_move', {
+			target: target
+		});
+		return;
+	}
+
+	// We have a valid path
+	// check if player is acquiring his next treasure
+	var tile = this.board.getTile(target.x, target.y)[0];
+	console.log(tile, this.board.getTile(target.x, target.y));
+	var get_treasure = false;
+	if (treasures.indexOf(tile) >= 0) {
+		if (player.isNextTreasure(tile)) {
+			get_treasure = true;
+			player.acquireTreasure();
+		}
+	}
+
+	// actually move player
+	player.x = target.x;
+	player.y = target.y;
+
+	// Inform everyone that player is moving
+	// and whether he is getting his treasure
+	var msg = {
 		player: player.toJSON(),
-		target: target
-	});
+		path:   path
+	};
+	if (get_treasure) msg.treasure = tile;
+	this.broadcaster.emit('player_move', msg);
 
 	this.nextTurn();
 };

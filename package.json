@@ -16,12 +16,13 @@
     "url": "https://github.com/timotheeg/Labyrinthe/issues"
   },
   "dependencies": {
-    "socket.io": "~1.4.5",
     "express": "~4.13.4",
-    "q": "~1.4.1",
+    "jade": "~1.11.0",
     "lodash": "~4.3.0",
-    "serve-favicon": "~2.3.0",
     "morgan": "~1.6.1",
-    "jade": "~1.11.0"
+    "node-pathfinding": "^0.2.6",
+    "q": "~1.4.1",
+    "serve-favicon": "~2.3.0",
+    "socket.io": "~1.4.5"
   }
 }

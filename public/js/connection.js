@@ -10,10 +10,10 @@ var
 
 // states
 var
-	i = 0;
-	WAITING_REGISTER = 1 << ++i
-	WAITING_SETUP    = 1 << ++i
-	WAITING_REGISTER = 1 << ++i
+	i = 0,
+	WAITING_REGISTER = 1 << ++i,
+	WAITING_SETUP    = 1 << ++i,
+	WAITING_REGISTER = 1 << ++i;
 
 function connectSocket()
 {
@@ -54,6 +54,11 @@ function connectSocket()
 		console.log('new_player!', data);
 
 		players.push(data.player);
+	});
+
+	socket.on('next_treasure', function (treasure) {
+		me.next_treasure = treasure;
+		$('#next_treasure').css('background-image', 'url("/img/treasures/' + me.next_treasure + '.png")');
 	});
 
 	socket.on('board_shift', function (data) {

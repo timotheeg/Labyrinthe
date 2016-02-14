@@ -112,6 +112,7 @@ function setupBoard(board_setup) {
 			mc.y = HALF_SIZE + row_idx * TILE_SIZE;
 			mc.lab_meta.row_idx = row_idx;
 			mc.lab_meta.col_idx = col_idx;
+			mc.addEventListener('click', requestMove);
 			
 			grid7x7[row_idx][col_idx] = mc;
 			
@@ -239,6 +240,7 @@ function shiftComplete(data, added_piece, ejected_piece) {
 	// piece that was pushed becomes new control piece
 	
 	ctrl_piece.removeEventListener('click', rotateControl);
+	ctrl_piece.addEventListener('click', requestMove);
 	stage.removeChild(ejected_piece);
 	ctrl_stage.removeChild(ctrl_piece);
 
@@ -251,12 +253,14 @@ function shiftComplete(data, added_piece, ejected_piece) {
 		if (data.direction >= 1) {
 			for (var col_idx=GRID_TILE_SIZE; col_idx-->1; ) {
 				grid7x7[data.row_idx][col_idx] = grid7x7[data.row_idx][col_idx - 1];
+				grid7x7[data.row_idx][col_idx].lab_meta.col_idx = col_idx;
 			}
 			grid7x7[data.row_idx][0] = added_piece;
 		}
 		else {
 			for (var col_idx=0; col_idx<GRID_TILE_SIZE-1; col_idx++) {
 				grid7x7[data.row_idx][col_idx] = grid7x7[data.row_idx][col_idx + 1];
+				grid7x7[data.row_idx][col_idx].lab_meta.col_idx = col_idx;
 			}
 			grid7x7[data.row_idx][GRID_TILE_SIZE-1] = added_piece;
 		}
@@ -265,12 +269,14 @@ function shiftComplete(data, added_piece, ejected_piece) {
 		if (data.direction >= 1) {
 			for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
 				grid7x7[row_idx][data.col_idx] = grid7x7[row_idx - 1][data.col_idx];
+				grid7x7[row_idx][data.col_idx].lab_meta.row_idx = row_idx;
 			}
 			grid7x7[0][data.col_idx] = added_piece;
 		}
 		else {
 			for (var row_idx=0; row_idx<GRID_TILE_SIZE-1; row_idx++) {
 				grid7x7[row_idx][data.col_idx] = grid7x7[row_idx + 1][data.col_idx];
+				grid7x7[row_idx][data.col_idx].lab_meta.row_idx = row_idx;
 			}
 			grid7x7[GRID_TILE_SIZE-1][data.col_idx] = added_piece;
 		}
@@ -287,6 +293,17 @@ function rotateControl(evt) {
 	createjs.Tween.get(mc).to({rotation: mc.rotation + 90}, 200).call(function() {
 		mc.rotation %= 360;
 		delete rotateControl.rotating;
+	});
+}
+
+function requestMove(evt) {
+	if (animating) return;
+
+	var target = evt.currentTarget.lab_meta;
+
+	socket.emit('move', {
+		x: target.col_idx,
+		y: target.row_idx
 	});
 }
 

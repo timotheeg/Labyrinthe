@@ -20,9 +20,9 @@ function Player(player_index, socket, name, treasures) {
 
 Player.COLORS = [
 	{color: 'yellow', rotation:   0, x: 0, y: 0},
-	{color: 'green',  rotation:  90, x: 6, y: 0},
+	{color: 'green',  rotation:  90, x: 0, y: 0},
 	{color: 'blue',   rotation: 180, x: 6, y: 6},
-	{color: 'red',    rotation: 270, x: 0, y: 6}
+	{color: 'red',    rotation: 270, x: 6, y: 0}
 ];
 
 Player.prototype.setGame = function(game) {
@@ -37,16 +37,6 @@ Player.prototype.isCurrentPlayer = function() {
 	return this.is_current_player;
 };
 
-// private JSON
-Player.prototype._toJSON = function() {
-	var data = this.toJSON();
-	
-	data.rotation = this.rotation,
-	data.next_treasure = this.treasures[this.collected];
-
-	return data;
-};
-
 // public json
 Player.prototype.toJSON = function() {
 	return {
@@ -55,18 +45,33 @@ Player.prototype.toJSON = function() {
 		index:     this.index,
 		color:     this.color,
 		collected: this.collected,
-		done:      this.collected >= this.treasures.length
+		done:      this.isDone()
 	};
 };
 
-Player.prototype.acquireTreasure = function() {
-	this.collected++;
+// private JSON
+Player.prototype._toJSON = function() {
+	var data = this.toJSON();
 
-	self.emit('collect_treasure', {
-		treasure:      this.treasures[this.collected],
-		next_treasure: this.treasures[++this.collected],
-		done:          this.collected >= this.treasures.length
-	});
+	data.rotation = this.rotation,
+	data.next_treasure = this.treasures[this.collected];
+
+	return data;
+};
+
+Player.prototype.isDone = function() {
+	return this.collected >= this.treasures.length;
+};
+
+Player.prototype.isNextTreasure = function(treasure) {
+	return treasure == this.treasures[this.collected];
+};
+
+Player.prototype.acquireTreasure = function() {
+	this.socket.emit(
+		'next_treasure',
+		this.treasures[++this.collected]
+	);
 };
 
 Player.prototype.listens = function() {

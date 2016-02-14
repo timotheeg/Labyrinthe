@@ -1,4 +1,5 @@
 var utils = require('./utils');
+var pathfinding = require("node-pathfinding");
 
 module.exports = Board;
 
@@ -64,9 +65,15 @@ Board.prototype.toJSON = function() {
 	};
 };
 
-Board.prototype.canMove = function(srcX, srcY, tgtX, tgtY) {
+Board.prototype.getTile = function(x, y) {
+	return this.board[y][x];
+};
+
+Board.prototype.getPath = function(srcX, srcY, tgtX, tgtY) {
 	// TODO: maintain the path matrix state and change it on shift
 	var matrix = getPathMatrix(this.board);
+
+	console.log(matrix);
 
 	// Convert the grid coordinate into path coordinates
 	srcX = srcX * 3 + 1;
@@ -74,27 +81,50 @@ Board.prototype.canMove = function(srcX, srcY, tgtX, tgtY) {
 	tgtX = tgtX * 3 + 1;
 	tgtY = tgtY * 3 + 1;
 
-	// TODO: check if there is a path from source to target
+	console.log(srcX, srcY, tgtX, tgtY);
 
-	return true;
+	var dimension = GRID_SIZE * 3;
+
+	// Check if there is a path from source to target
+	var buf  = pathfinding.bytesFrom2DArray(dimension, dimension, matrix);
+	var grid = pathfinding.buildGrid(dimension, dimension, buf);
+	var path = pathfinding.findPath(srcX, srcY, tgtX, tgtY, grid);
+
+	console.log(path);
+
+	if (!path || !path.length) return null;
+
+	// Transform the path from submatrixes to tiles positions
+	var res = [];
+	for (var idx=0; idx<path.length; idx+=3) {
+		var cell = path[idx];
+		res.push({
+			x: Math.floor(((cell >>> 16) - 1) / 3),
+			y:  Math.floor(((cell & 0xFFFF) - 1) / 3)
+		});
+	}
+
+	console.log(res);
+
+	return res;
 };
 
 // path matrixes used to do path finding later
 var path_matrixes = {
-	corner: [
-		[0, 1, 0],
-		[0, 1, 1],
-		[0, 0, 0]
+	c: [
+		[1, 0, 1],
+		[1, 0, 0],
+		[1, 1, 1]
 	],
-	straight: [
-		[0, 1, 0],
-		[0, 1, 0],
-		[0, 1, 0]
+	s: [
+		[1, 0, 1],
+		[1, 0, 1],
+		[1, 0, 1]
 	],
 	T: [
-		[0, 1, 0],
-		[1, 1, 1],
-		[0, 0, 0]
+		[1, 0, 1],
+		[0, 0, 0],
+		[1, 1, 1]
 	]
 };
 
@@ -150,11 +180,11 @@ function getRandomAngle()
 
 function getPathMatrix(board)
 {
-	var idx, jdx, m = new Array(GRID_SIZE * 3);
+	var idx, jdx, m = new Array(GRID_SIZE*3);
 
 	for (idx=GRID_SIZE*3; idx--; )
 	{
-		m[idx] = new Array(GRID_SIZE * 3);
+		m[idx] = new Array(GRID_SIZE*3);
 	}
 
 	for (idx=GRID_SIZE; idx--; )
@@ -168,6 +198,8 @@ function getPathMatrix(board)
 				angle     = piece[1],
 				sub       = path_matrixes[tile_type];
 
+			// console.log(idx, jdx, piece, tile_type);
+
 			sub = rotate[angle](sub);
 
 			inject(m, sub, idx*3, jdx*3);
@@ -179,6 +211,14 @@ function getPathMatrix(board)
 
 // rotate the path matrixes
 var rotate = {
+	0: function(m)
+	{
+		return [
+			[m[0][0], m[0][1], m[0][2]],
+			[m[1][0], m[1][1], m[1][2]],
+			[m[2][0], m[2][1], m[2][2]]
+		];
+	},
 	90: function(m)
 	{
 		return [
