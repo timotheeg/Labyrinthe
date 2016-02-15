@@ -383,12 +383,12 @@ function getPiece(name, rotation) {
 		mc.addChild(treasure);
 	}
 	
+	piece.addChild(mc);
+	
 	if (player_marker) {
 		piece.player_marker = player_marker;
 		piece.addChild(player_marker);
 	}
-	
-	piece.addChild(mc);
 	
 	piece.lab_meta = {
 		mc: mc,
@@ -413,30 +413,29 @@ function requestShift(evt) {
 }
 
 function movePlayer(data) {
-	// TODO: move player on board
-	var player = players[data.player.color];
+	if (data.path.length <= 1) {
+		return animation_done();
+	}
 
-	var marker = player.marker;
+	// TODO: move player on board
+	var
+		player = players[data.player.color],
+		marker = player.marker;
 
 	board.addChild(marker);
 
 	// place marker at beginning initially
 	marker.x = HALF_SIZE + player.x * TILE_SIZE;
 	marker.y = HALF_SIZE + player.y * TILE_SIZE;
+	marker.alpha = 1;
 
 	// record last animation step
 	$.extend(player, data.player);
 
 	var
 		path = data.path,
-		idx = 0,
+		idx,
 		tween = createjs.Tween.get(marker);
-
-	if (path.length <= 1) {
-		return animation_done();
-	}
-
-	marker.alpha = 1;
 
 	for (idx=1; idx<path.length-1; idx++) {
 		tween = tween.to({
@@ -455,7 +454,7 @@ function movePlayer(data) {
 			// place player INSIDE tile so he will ge animated for free
 			grid7x7[path[idx].y][path[idx].x].addChild(marker);
 			marker.x = marker.y = 0;
-			marker.alpha = 0.3;
+			marker.alpha = 0.4;
 
 			animation_done();
 		});
@@ -471,7 +470,7 @@ function addTriangleControls() {
 	// get and position triangles
 	var button = new createjs.Container();
 	var mc = getTriangleGraphic();
-	mc.x = HALF_SIZE / 2;
+	mc.x = 0;
 	mc.y = TILE_SIZE / 2;
 	button.addChild(mc);
 	button.x = 0;
@@ -495,7 +494,7 @@ function addTriangleControls() {
 
 	button = button.clone(true);
 	button.children[0].rotation = 180;
-	button.x = HALF_SIZE + GRID_SIZE * TILE_SIZE;
+	button.x = TILE_SIZE + GRID_SIZE * TILE_SIZE;
 	button.y = HALF_SIZE + TILE_SIZE;
 	button.action_data = {row_idx: 1, direction: -1};
 	button.addEventListener('click', requestShift);
@@ -516,7 +515,7 @@ function addTriangleControls() {
 	button = button.clone(true);
 	button.children[0].rotation = 90;
 	button.children[0].x = TILE_SIZE / 2;
-	button.children[0].y = HALF_SIZE / 2;
+	button.children[0].y = 0;
 	button.x = HALF_SIZE + TILE_SIZE;
 	button.y = 0;
 	button.action_data = {col_idx: 1, direction: 1};
@@ -538,7 +537,7 @@ function addTriangleControls() {
 	button = button.clone(true);
 	button.children[0].rotation = -90;
 	button.x = HALF_SIZE + TILE_SIZE;
-	button.y = HALF_SIZE + GRID_SIZE * TILE_SIZE;
+	button.y = TILE_SIZE + GRID_SIZE * TILE_SIZE;
 	button.action_data = {col_idx: 1, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
@@ -561,14 +560,14 @@ function getTriangleGraphic() {
 	var g = new createjs.Graphics();
 	g.beginFill("orange");
 	g.moveTo(0,0);
-	g.lineTo(38, 28);
-	g.lineTo(0, 56);
+	g.lineTo(60, 45);
+	g.lineTo(0, 90);
 	g.endFill();
 	
 	var shape = new createjs.Shape(g);
 	
-	shape.regX = 19;
-	shape.regY = 28;
+	shape.regX = 0;
+	shape.regY = 45;
 
 	return shape;
 }
