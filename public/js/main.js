@@ -1,5 +1,5 @@
 var BOARD_SIZE = 1080;
-var GRID_TILE_SIZE = 7;
+var GRID_SIZE = 7;
 var TILE_SIZE = 135;
 var HALF_SIZE = TILE_SIZE / 2;
 
@@ -49,8 +49,8 @@ var player_tiles = {
 	green:  '#009933'
 };
 
-var grid7x7 = new Array(GRID_TILE_SIZE);
-for (var idx=GRID_TILE_SIZE; idx--;) grid7x7[idx] = new Array(GRID_TILE_SIZE);
+var grid7x7 = new Array(GRID_SIZE);
+for (var idx=GRID_SIZE; idx--;) grid7x7[idx] = new Array(GRID_SIZE);
 
 $(function(){
 	queue = new createjs.LoadQueue(false);
@@ -97,8 +97,8 @@ function setupBoard(board_setup) {
 	
 	ctrl_piece.addEventListener('click', rotateControl);
 
-	for (var row_idx=0; row_idx<GRID_TILE_SIZE; row_idx++) {
-		for (var col_idx=0; col_idx<GRID_TILE_SIZE; col_idx++) {
+	for (var row_idx=0; row_idx<GRID_SIZE; row_idx++) {
+		for (var col_idx=0; col_idx<GRID_SIZE; col_idx++) {
 			var mc;
 			
 			if (board_setup.board[row_idx][col_idx]) {
@@ -160,13 +160,13 @@ function shiftTiles(data) {
 				.to({x: piece.x + HALF_SIZE + TILE_SIZE}, 500);
 			
 			// we need to animate all pieces
-			for (var col_idx=0; col_idx<GRID_TILE_SIZE-1; col_idx++) {
+			for (var col_idx=0; col_idx<GRID_SIZE-1; col_idx++) {
 				var mc = grid7x7[data.row_idx][col_idx];
 				createjs.Tween.get(mc).wait(250).to({x: mc.x + TILE_SIZE}, 500);
 			}
 			
 			// last piece must slide out of canvas
-			var mc = grid7x7[data.row_idx][GRID_TILE_SIZE-1];
+			var mc = grid7x7[data.row_idx][GRID_SIZE-1];
 			createjs.Tween.get(mc)
 				.wait(250)
 				.to({x: mc.x + TILE_SIZE}, 500)
@@ -174,15 +174,15 @@ function shiftTiles(data) {
 				.call(shiftComplete, [data, piece, mc]);
 		}
 		else {
-			piece.x = (GRID_TILE_SIZE+1) * TILE_SIZE;
-			piece.lab_meta.col_idx = GRID_TILE_SIZE-1;
+			piece.x = (GRID_SIZE+1) * TILE_SIZE;
+			piece.lab_meta.col_idx = GRID_SIZE-1;
 
 			createjs.Tween.get(piece)
 				.to({x: piece.x - HALF_SIZE}, 250)
 				.to({x: piece.x - HALF_SIZE - TILE_SIZE}, 500);
 			
 			// we need to animate all pieces
-			for (var col_idx=GRID_TILE_SIZE; col_idx-->1; ) {
+			for (var col_idx=GRID_SIZE; col_idx-->1; ) {
 				var mc = grid7x7[data.row_idx][col_idx];
 				createjs.Tween.get(mc).wait(250).to({x: mc.x - TILE_SIZE}, 500);
 			}
@@ -209,13 +209,13 @@ function shiftTiles(data) {
 				.to({y: piece.y + HALF_SIZE + TILE_SIZE}, 500);
 			
 			// we need to animate all pieces
-			for (var row_idx=0; row_idx<GRID_TILE_SIZE-1; row_idx++) {
+			for (var row_idx=0; row_idx<GRID_SIZE-1; row_idx++) {
 				var mc = grid7x7[row_idx][data.col_idx];
 				createjs.Tween.get(mc).wait(250).to({y: mc.y + TILE_SIZE}, 500);
 			}
 			
 			// last piece must slide out of canvas
-			var mc = grid7x7[GRID_TILE_SIZE-1][data.col_idx];
+			var mc = grid7x7[GRID_SIZE-1][data.col_idx];
 			createjs.Tween.get(mc)
 				.wait(250)
 				.to({y: mc.y + TILE_SIZE}, 500)
@@ -223,15 +223,15 @@ function shiftTiles(data) {
 				.call(shiftComplete, [data, piece, mc]);
 		}
 		else {
-			piece.y = (GRID_TILE_SIZE+1) * TILE_SIZE;
-			piece.lab_meta.row_idx = GRID_TILE_SIZE-1;
+			piece.y = (GRID_SIZE+1) * TILE_SIZE;
+			piece.lab_meta.row_idx = GRID_SIZE-1;
 
 			createjs.Tween.get(piece)
 				.to({y: piece.y - HALF_SIZE}, 250)
 				.to({y: piece.y - HALF_SIZE - TILE_SIZE}, 500);
 			
 			// we need to animate all pieces
-			for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
+			for (var row_idx=GRID_SIZE; row_idx-->1; ) {
 				var mc = grid7x7[row_idx][data.col_idx];
 				createjs.Tween.get(mc).wait(250).to({y: mc.y - TILE_SIZE}, 500);
 			}
@@ -259,36 +259,59 @@ function shiftComplete(data, added_piece, ejected_piece) {
 	ctrl_piece.addEventListener('click', rotateControl);
 	ctrl_stage.addChild(ctrl_piece);
 
-	if (data.row_idx) {
+	if ('row_idx' in data) {
 		if (data.direction >= 1) {
-			for (var col_idx=GRID_TILE_SIZE; col_idx-->1; ) {
+			for (var col_idx=GRID_SIZE; col_idx-->1; ) {
 				grid7x7[data.row_idx][col_idx] = grid7x7[data.row_idx][col_idx - 1];
 				grid7x7[data.row_idx][col_idx].lab_meta.col_idx = col_idx;
 			}
 			grid7x7[data.row_idx][0] = added_piece;
 		}
 		else {
-			for (var col_idx=0; col_idx<GRID_TILE_SIZE-1; col_idx++) {
+			for (var col_idx=0; col_idx<GRID_SIZE-1; col_idx++) {
 				grid7x7[data.row_idx][col_idx] = grid7x7[data.row_idx][col_idx + 1];
 				grid7x7[data.row_idx][col_idx].lab_meta.col_idx = col_idx;
 			}
-			grid7x7[data.row_idx][GRID_TILE_SIZE-1] = added_piece;
+			grid7x7[data.row_idx][GRID_SIZE-1] = added_piece;
 		}
 	}
 	else {
 		if (data.direction >= 1) {
-			for (var row_idx=GRID_TILE_SIZE; row_idx-->1; ) {
+			for (var row_idx=GRID_SIZE; row_idx-->1; ) {
 				grid7x7[row_idx][data.col_idx] = grid7x7[row_idx - 1][data.col_idx];
 				grid7x7[row_idx][data.col_idx].lab_meta.row_idx = row_idx;
 			}
 			grid7x7[0][data.col_idx] = added_piece;
 		}
 		else {
-			for (var row_idx=0; row_idx<GRID_TILE_SIZE-1; row_idx++) {
+			for (var row_idx=0; row_idx<GRID_SIZE-1; row_idx++) {
 				grid7x7[row_idx][data.col_idx] = grid7x7[row_idx + 1][data.col_idx];
 				grid7x7[row_idx][data.col_idx].lab_meta.row_idx = row_idx;
 			}
-			grid7x7[GRID_TILE_SIZE-1][data.col_idx] = added_piece;
+			grid7x7[GRID_SIZE-1][data.col_idx] = added_piece;
+		}
+	}
+
+	// update players position if they were ejected
+	for (var color in players) {
+		var player = players[color];
+		if ('row_idx' in data) {
+			if (player.y == data.row_idx) {
+				player.x += data.direction;
+				if (player.x < 0 || player.x >= GRID_SIZE) {
+					player.x = (player.x + GRID_SIZE) % GRID_SIZE;
+					grid7x7[player.y][player.x].addChild(player.marker);
+				}
+			}
+		}
+		else {
+			if (player.x == data.col_idx) {
+				player.y += data.direction;
+				if (player.y < 0 || player.y >= GRID_SIZE) {
+					player.y = (player.y + GRID_SIZE) % GRID_SIZE;
+					grid7x7[player.y][player.x].addChild(player.marker);
+				}
+			}
 		}
 	}
 
@@ -472,7 +495,7 @@ function addTriangleControls() {
 
 	button = button.clone(true);
 	button.children[0].rotation = 180;
-	button.x = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
+	button.x = HALF_SIZE + GRID_SIZE * TILE_SIZE;
 	button.y = HALF_SIZE + TILE_SIZE;
 	button.action_data = {row_idx: 1, direction: -1};
 	button.addEventListener('click', requestShift);
@@ -515,7 +538,7 @@ function addTriangleControls() {
 	button = button.clone(true);
 	button.children[0].rotation = -90;
 	button.x = HALF_SIZE + TILE_SIZE;
-	button.y = HALF_SIZE + GRID_TILE_SIZE * TILE_SIZE;
+	button.y = HALF_SIZE + GRID_SIZE * TILE_SIZE;
 	button.action_data = {col_idx: 1, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);

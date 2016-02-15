@@ -20,7 +20,7 @@ function Player(player_index, socket, name, treasures) {
 
 Player.COLORS = [
 	{color: 'yellow', rotation:   0, x: 0, y: 0},
-	{color: 'green',  rotation:  90, x: 0, y: 0},
+	{color: 'green',  rotation:  90, x: 0, y: 6},
 	{color: 'blue',   rotation: 180, x: 6, y: 6},
 	{color: 'red',    rotation: 270, x: 6, y: 0}
 ];

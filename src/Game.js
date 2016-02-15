@@ -5,6 +5,8 @@ var
 
 module.exports = Game;
 
+var GRID_SIZE = 7;
+
 // states enum
 var
 	i = 0,
@@ -60,9 +62,9 @@ Game.getTreasureDeck = function() {
 };
 
 Game.prototype._init = function() {
-	this.state          = PENDING
+	this.state          = PENDING;
 	this.turn_idx       = -1;
-	this.board          = new Board();
+	this.board          = new Board(GRID_SIZE);
 	this.treasures_deck = Game.getTreasureDeck();
 };
 
@@ -105,6 +107,8 @@ Game.prototype.addPlayer = function(name, socket) {
 };
 
 Game.prototype.removePlayer = function(player) {
+	// Warning: this doesn't wor during a game
+	// TODO: make this more resilient
 	var idx = this.players.indexOf(player);
 
 	this.players.splice(idx, 1);
@@ -175,6 +179,20 @@ Game.prototype.shiftBoard = function(data) {
 	if (this.state != WAITING_SHIFT) return;
 
 	this.board.shift(data);
+
+	// players that were on a moving cells need to be udpated as well
+	this.players.forEach(function(player) {
+		if ('row_idx' in data) {
+			if (player.y == data.row_idx) {
+				player.x = (player.x + data.direction + GRID_SIZE) % GRID_SIZE;
+			}
+		}
+		else {
+			if (player.x == data.col_idx) {
+				player.y = (player.y + data.direction + GRID_SIZE) % GRID_SIZE;
+			}
+		}
+	});
 
 	this.state = WAITING_MOVE;
 	this.broadcaster.emit('board_shift', data);
