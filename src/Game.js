@@ -83,7 +83,6 @@ Game.prototype.addPlayer = function(name, socket) {
 	);
 
 	// cross referencing
-	this.players.push(player);
 	player.setGame(this);
 
 	// give setup info to new player
@@ -93,9 +92,8 @@ Game.prototype.addPlayer = function(name, socket) {
 	});
 
 	// inform everyone the new player has arrived
-	this.broadcaster.emit('new_player', {
-		player: player.toJSON()
-	});
+	this.players.push(player);
+	this.broadcaster.emit('new_player', player.toJSON());
 
 	if (this.players.length <= 1) {
 		// first player joining, we make him the current
@@ -151,6 +149,7 @@ Game.prototype.isPending = function() {
 Game.prototype.start = function(s) {
 	if (this.state != PENDING) return;
 
+	this.broadcaster.emit('start');
 	this.nextTurn();
 };
 
@@ -195,17 +194,6 @@ Game.prototype.movePlayer = function(player, target) {
 	}
 
 	// We have a valid path
-	// check if player is acquiring his next treasure
-	var tile = this.board.getTile(target.x, target.y)[0];
-	console.log(tile, this.board.getTile(target.x, target.y));
-	var get_treasure = false;
-	if (treasures.indexOf(tile) >= 0) {
-		if (player.isNextTreasure(tile)) {
-			get_treasure = true;
-			player.acquireTreasure();
-		}
-	}
-
 	// actually move player
 	player.x = target.x;
 	player.y = target.y;
@@ -218,6 +206,17 @@ Game.prototype.movePlayer = function(player, target) {
 	};
 	if (get_treasure) msg.treasure = tile;
 	this.broadcaster.emit('player_move', msg);
+
+	// check if player is acquiring his next treasure
+	var tile = this.board.getTile(target.x, target.y)[0];
+	console.log(tile, this.board.getTile(target.x, target.y));
+	var get_treasure = false;
+	if (treasures.indexOf(tile) >= 0) {
+		if (player.isNextTreasure(tile)) {
+			get_treasure = true;
+			player.acquireTreasure();
+		}
+	}
 
 	this.nextTurn();
 };

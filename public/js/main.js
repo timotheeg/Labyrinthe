@@ -128,8 +128,20 @@ function tick() {
 	ctrl_stage.update();
 }
 
+function start() {
+	// game is starting, there will be no more player, grab the players from their respective tiles
+	for (var color in players) {
+		var player = players[color];
+		var cell = grid7x7[player.y][player.x];
+		player.marker = cell.player_marker;
+		delete cell.player_marker;
+	}
+}
+
 function shiftTiles(data) {
 	var piece = ctrl_piece;
+
+	piece.removeEventListener('click', rotateControl);
 	
 	piece.lab_meta.mc.rotation = data.ctrl_rotation;
 	
@@ -238,8 +250,6 @@ function shiftTiles(data) {
 function shiftComplete(data, added_piece, ejected_piece) {
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
-	
-	ctrl_piece.removeEventListener('click', rotateControl);
 	ctrl_piece.addEventListener('click', requestMove);
 	stage.removeChild(ejected_piece);
 	ctrl_stage.removeChild(ctrl_piece);
@@ -323,7 +333,7 @@ function getPiece(name, rotation) {
 			.setStrokeStyle(1)
 			.beginStroke('#000000')
 			.beginFill(player_tiles[name])
-			.drawCircle(HALF_SIZE+2, HALF_SIZE-2, 21);
+			.drawCircle(HALF_SIZE, HALF_SIZE, 19);
 
 		bg = new createjs.Bitmap(queue.getResult('c'));
 	}
@@ -351,7 +361,8 @@ function getPiece(name, rotation) {
 	}
 	
 	if (player_marker) {
-		mc.addChild(player_marker);
+		piece.player_marker = player_marker;
+		piece.addChild(player_marker);
 	}
 	
 	piece.addChild(mc);
@@ -378,8 +389,58 @@ function requestShift(evt) {
 	));
 }
 
-function movePlayer() {
+function movePlayer(data) {
 	// TODO: move player on board
+	var player = players[data.player.color];
+
+	var marker = player.marker;
+
+	board.addChild(marker);
+
+	// place marker at beginning initially
+	marker.x = HALF_SIZE + player.x * TILE_SIZE;
+	marker.y = HALF_SIZE + player.y * TILE_SIZE;
+
+	// record last animation step
+	$.extend(player, data.player);
+
+	var
+		path = data.path,
+		idx = 0,
+		tween = createjs.Tween.get(marker);
+
+	if (path.length <= 1) {
+		return animation_done();
+	}
+
+	marker.alpha = 1;
+
+	for (idx=1; idx<path.length-1; idx++) {
+		tween = tween.to({
+			x: HALF_SIZE + path[idx].x * TILE_SIZE,
+			y: HALF_SIZE + path[idx].y * TILE_SIZE
+		}, 500);
+	}
+
+	// go to last step
+	tween
+		.to({
+			x: HALF_SIZE + path[idx].x * TILE_SIZE,
+			y: HALF_SIZE + path[idx].y * TILE_SIZE
+		}, 500)
+		.call(function() {
+			// place player INSIDE tile so he will ge animated for free
+			grid7x7[path[idx].y][path[idx].x].addChild(marker);
+			marker.x = marker.y = 0;
+			marker.alpha = 0.3;
+
+			animation_done();
+		});
+}
+
+function nextTreasure(treasure) {
+	me.next_treasure = treasure;
+	$('#next_treasure').css('background-image', 'url("/img/treasures/' + me.next_treasure + '.png")');
 	animation_done();
 }
 

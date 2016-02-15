@@ -4,7 +4,7 @@ var
 	socket,
 	current_player_index = -1,
 	me,
-	players = [],
+	players = {},
 	action_queue = [],
 	animating = false;
 
@@ -45,20 +45,24 @@ function connectSocket()
 	socket.on('setup', function (data) {
 		console.log('setup', data);
 
-		players = data.players;
+		data.players.forEach(function(player) {
+			players[player.color] = player;
+		});
 
 		setupBoard(data.board);
 	});
 
-	socket.on('new_player', function (data) {
-		console.log('new_player!', data);
+	socket.on('new_player', function (player) {
+		console.log('new_player!', player);
 
-		players.push(data.player);
+		players[player.color] = player;
 	});
 
-	socket.on('next_treasure', function (treasure) {
-		me.next_treasure = treasure;
-		$('#next_treasure').css('background-image', 'url("/img/treasures/' + me.next_treasure + '.png")');
+	socket.on('start', start);
+
+	socket.on('next_treasure', function (data) {
+		action_queue.push(['next_treasure', data]);
+		execute();
 	});
 
 	socket.on('board_shift', function (data) {
@@ -90,6 +94,9 @@ function execute() {
 			break;
 		case 'player_move':
 			movePlayer(action[1]);
+			break;
+		case 'next_treasure':
+			nextTreasure(action[1]);
 			break;
 	}
 }
