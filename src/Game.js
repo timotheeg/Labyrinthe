@@ -66,6 +66,7 @@ Game.prototype._init = function() {
 	this.turn_idx       = -1;
 	this.board          = new Board(GRID_SIZE);
 	this.treasures_deck = Game.getTreasureDeck();
+	this.last_move      = {row_idx: 0, direction: 0};
 };
 
 Game.prototype._getNextHand = function() {
@@ -178,6 +179,13 @@ Game.prototype.nextTurn = function() {
 Game.prototype.shiftBoard = function(data) {
 	if (this.state != WAITING_SHIFT) return;
 
+	var prop = 'row_idx' in data ? 'row_idx' : 'col_idx';
+
+	if (data[prop] === this.last_move[prop] && data.direction === this.last_move.direction * -1) {
+		// trying to reverse last move... No, no, no!
+		return this.players[this.turn_idx].socket.emit('shift_not_allowed', 'REVERSE_SHIFT');
+	}
+
 	this.board.shift(data);
 
 	// players that were on a moving cells need to be udpated as well
@@ -194,6 +202,7 @@ Game.prototype.shiftBoard = function(data) {
 		}
 	});
 
+	this.last_move = data;
 	this.state = WAITING_MOVE;
 	this.broadcaster.emit('board_shift', data);
 };
