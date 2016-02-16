@@ -73,7 +73,7 @@ Board.prototype.getPath = function(srcX, srcY, tgtX, tgtY) {
 	// TODO: maintain the path matrix state and change it on shift
 	var matrix = getPathMatrix(this.board);
 
-	console.log(matrix);
+	// console.log(matrix);
 
 	// Convert the grid coordinate into path coordinates
 	srcX = srcX * 3 + 1;
@@ -81,7 +81,7 @@ Board.prototype.getPath = function(srcX, srcY, tgtX, tgtY) {
 	tgtX = tgtX * 3 + 1;
 	tgtY = tgtY * 3 + 1;
 
-	console.log(srcX, srcY, tgtX, tgtY);
+	// console.log(srcX, srcY, tgtX, tgtY);
 
 	var dimension = GRID_SIZE * 3;
 
@@ -89,8 +89,6 @@ Board.prototype.getPath = function(srcX, srcY, tgtX, tgtY) {
 	var buf  = pathfinding.bytesFrom2DArray(dimension, dimension, matrix);
 	var grid = pathfinding.buildGrid(dimension, dimension, buf);
 	var path = pathfinding.findPath(srcX, srcY, tgtX, tgtY, grid);
-
-	console.log(path);
 
 	if (!path || !path.length) return null;
 
@@ -100,11 +98,11 @@ Board.prototype.getPath = function(srcX, srcY, tgtX, tgtY) {
 		var cell = path[idx];
 		res.push({
 			x: Math.floor(((cell >>> 16) - 1) / 3),
-			y:  Math.floor(((cell & 0xFFFF) - 1) / 3)
+			y: Math.floor(((cell & 0xFFFF) - 1) / 3)
 		});
 	}
 
-	console.log(res);
+	// console.log(res);
 
 	return res;
 };
@@ -165,12 +163,7 @@ var named_tiles = {
 	skull:   'T',
 	spider:  'c',
 	sword:   'T',
-	troll:   'T',
-
-	yellow:  'c',
-	red:     'c',
-	blue:    'c',
-	green:   'c'
+	troll:   'T'
 };
 
 function getRandomAngle()

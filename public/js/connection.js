@@ -43,9 +43,9 @@ function connectSocket()
 	socket.on('setup', function (data) {
 		console.log('setup', data);
 
-		data.players.forEach(setupPlayer);
-
 		setupBoard(data.board);
+
+		data.players.forEach(setupPlayer);
 	});
 
 	socket.on('new_player', function (player) {

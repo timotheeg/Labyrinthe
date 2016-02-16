@@ -150,7 +150,7 @@ function setCurrentPlayer(index) {
 
 	for (var color in players) {
 		player = players[color];
-		if (player.color === color) break;
+		if (player.index === index) break;
 	}
 
 	if (player.color === me.color) {
