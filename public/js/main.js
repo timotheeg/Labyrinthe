@@ -11,7 +11,9 @@ var tiles = {
 
 var board;
 var players = {};
+var buttons = {};
 var current_player_index = -1;
+var last_shift = null;
 var stage;
 var queue;
 var ctrl_piece;
@@ -58,7 +60,6 @@ $(function(){
 	for (var key in treasure_tiles) {
 		queue.loadFile({id: key, src: 'img/treasures/' + key + '.png'});
 	}
-
 
 	$('#start').click(function() {
 		socket.emit('start');
@@ -167,6 +168,14 @@ function animatePlayerMarker(player) {
 
 function shiftTiles(data) {
 	var piece = ctrl_piece;
+
+	// indicates which button is no longer available
+	for (var key in buttons) {
+		buttons[key].visible = true;
+	}
+
+	var token = ('row_idx' in data ? ['y', data.row_idx] : ['x', data.col_idx]).concat([data.direction * -1]).join('.');
+	buttons[token].visible = false;
 
 	piece.removeEventListener('click', rotateControl);
 	
@@ -512,18 +521,21 @@ function addTriangleControls() {
 	button.addEventListener('click', requestShift);
 	button.cursor = 'pointer';
 	board.addChild(button);
+	buttons['y.1.1'] = button;
 	
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 3;
 	button.action_data = {row_idx: 3, direction: 1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['y.3.1'] = button;
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 5;
 	button.action_data = {row_idx: 5, direction: 1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['y.5.1'] = button;
 
 	button = button.clone(true);
 	button.children[0].rotation = 180;
@@ -532,18 +544,21 @@ function addTriangleControls() {
 	button.action_data = {row_idx: 1, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['y.1.-1'] = button;
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 3;
 	button.action_data = {row_idx: 3, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['y.3.-1'] = button;
 
 	button = button.clone(true);
 	button.y = HALF_SIZE + TILE_SIZE * 5;
 	button.action_data = {row_idx: 5, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['y.5.-1'] = button;
 
 	button = button.clone(true);
 	button.children[0].rotation = 90;
@@ -554,18 +569,21 @@ function addTriangleControls() {
 	button.action_data = {col_idx: 1, direction: 1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['x.1.1'] = button;
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 3;
 	button.action_data = {col_idx: 3, direction: 1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['x.3.1'] = button;
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 5;
 	button.action_data = {col_idx: 5, direction: 1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['x.5.1'] = button;
 
 	button = button.clone(true);
 	button.children[0].rotation = -90;
@@ -574,18 +592,21 @@ function addTriangleControls() {
 	button.action_data = {col_idx: 1, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['x.1.-1'] = button;
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 3;
 	button.action_data = {col_idx: 3, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['x.3.-1'] = button;
 
 	button = button.clone(true);
 	button.x = HALF_SIZE + TILE_SIZE * 5;
 	button.action_data = {col_idx: 5, direction: -1};
 	button.addEventListener('click', requestShift);
 	board.addChild(button);
+	buttons['x.5.-1'] = button;
 }
 
 function getTriangleGraphic() {
