@@ -452,14 +452,17 @@ function requestShift(evt) {
 }
 
 function movePlayer(data) {
-	if (data.path.length <= 1) {
-		return animation_done();
-	}
-
-	// TODO: move player on board
 	var
 		player = players[data.player.color],
 		marker = player.marker;
+
+	if (data.path.length <= 1) {
+		// already in place
+		createjs.Tween.get(player.marker.circle, {override:true})
+			.to({scaleX: 1, scaleY: 1, alpha: 0.4}, 250);
+		
+		return animation_done();
+	}
 
 	board.addChild(marker);
 
@@ -496,7 +499,8 @@ function movePlayer(data) {
 			// place player INSIDE tile so he will ge animated for free
 			grid7x7[path[idx].y][path[idx].x].addChild(marker);
 			marker.x = marker.y = 0;
-			marker.circle.alpha = 0.4;
+			createjs.Tween.get(player.marker.circle, {override:true})
+				.to({alpha: 0.4}, 250);
 
 			animation_done();
 		});
