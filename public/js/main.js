@@ -10,6 +10,8 @@ var tiles = {
 };
 
 var board;
+var players = {};
+var current_player_index = -1;
 var stage;
 var queue;
 var ctrl_piece;
@@ -42,13 +44,6 @@ var treasure_tiles = {
 	troll:   {t:'T', x:29,  y:17,  s:0.58, r:0}
 };
 
-var player_tiles = {
-	yellow: '#ffff00',
-	red:    '#ff0000',
-	blue:   '#330066',
-	green:  '#009933'
-};
-
 var grid7x7 = new Array(GRID_SIZE);
 for (var idx=GRID_SIZE; idx--;) grid7x7[idx] = new Array(GRID_SIZE);
 
@@ -76,7 +71,7 @@ $(function(){
 
 function setupBoard(board_setup) {
 	stage = new createjs.Stage("board");
-	stage.enableMouseOver(20); 
+	stage.enableMouseOver(20);
 	
 	board = new createjs.Container();
 	
@@ -123,19 +118,51 @@ function setupBoard(board_setup) {
 	tick();
 }
 
+function setupPlayer(player) {
+	if (players[player.color]) {
+		$.extends(players[player.color], player);
+	}
+	else {
+		players[player.color] = player;
+	}
+
+	// create player marker and place it on the board
+	player.marker = getPlayerMarker(player.color);
+
+	grid7x7[player.y][player.x].addChild(player.marker);
+}
+
 function tick() {
 	stage.update();
 	ctrl_stage.update();
 }
 
 function start() {
-	// game is starting, there will be no more player, grab the players from their respective tiles
+	// game is starting, there will be no more player
+	// anything to do?
+}
+
+function setCurrentPlayer(index) {
+	current_player_index = index;
+
+	var player;
+
 	for (var color in players) {
-		var player = players[color];
-		var cell = grid7x7[player.y][player.x];
-		player.marker = cell.player_marker;
-		delete cell.player_marker;
+		player = players[color];
+		if (player.color === color) break;
 	}
+
+	if (player.color === me.color) {
+		animatePlayerMarker(player);
+	}
+
+	animation_done();
+}
+
+function animatePlayerMarker(player) {
+	createjs.Tween.get(player.marker.circle, {loop:true, override:true})
+		.to({scaleX: 2, scaleY: 2, alpha: 1  }, 250)
+		.to({scaleX: 1, scaleY: 1, alpha: 0.4}, 250);
 }
 
 function shiftTiles(data) {
@@ -343,22 +370,12 @@ function requestMove(evt) {
 function getPiece(name, rotation) {
 	if (rotation === undefined || rotation === -1) rotation = Math.floor(Math.random() * 4) * 90;
 
-	var tile, treasure, bg, player_marker;
+	var tile, treasure, bg;
 	
 	if (treasure_tiles[name]) {
 		tile = treasure_tiles[name];
 		bg = new createjs.Bitmap(queue.getResult(tile.t));
 		treasure = new createjs.Bitmap(queue.getResult(name));
-	}
-	else if (player_tiles[name]) {
-		var player_marker = new createjs.Shape();
-		player_marker.graphics
-			.setStrokeStyle(1)
-			.beginStroke('#000000')
-			.beginFill(player_tiles[name])
-			.drawCircle(HALF_SIZE, HALF_SIZE, 19);
-
-		bg = new createjs.Bitmap(queue.getResult('c'));
 	}
 	else {
 		bg = new createjs.Bitmap(queue.getResult(name));
@@ -385,17 +402,30 @@ function getPiece(name, rotation) {
 	
 	piece.addChild(mc);
 	
-	if (player_marker) {
-		piece.player_marker = player_marker;
-		piece.addChild(player_marker);
-	}
-	
 	piece.lab_meta = {
 		mc: mc,
 		treasure: treasure
 	};
 	
 	return piece;
+}
+
+function getPlayerMarker(color) {
+	var circle = new createjs.Shape();
+	circle.graphics
+		.setStrokeStyle(1)
+		.beginStroke('#000000')
+		.beginFill(color)
+		.drawCircle(0, 0, 20);
+
+	circle.x = circle.y = HALF_SIZE;
+
+	var mc = new createjs.Container();
+
+	mc.addChild(circle);
+	mc.circle = circle;
+
+	return mc;
 }
 
 function requestShift(evt) {
@@ -427,7 +457,10 @@ function movePlayer(data) {
 	// place marker at beginning initially
 	marker.x = HALF_SIZE + player.x * TILE_SIZE;
 	marker.y = HALF_SIZE + player.y * TILE_SIZE;
-	marker.alpha = 1;
+
+	// animate circle to normale size/opacity
+	createjs.Tween.get(player.marker.circle, {override:true})
+		.to({scaleX: 1, scaleY: 1, alpha: 1}, 250);
 
 	// record last animation step
 	$.extend(player, data.player);
@@ -454,7 +487,7 @@ function movePlayer(data) {
 			// place player INSIDE tile so he will ge animated for free
 			grid7x7[path[idx].y][path[idx].x].addChild(marker);
 			marker.x = marker.y = 0;
-			marker.alpha = 0.4;
+			marker.circle.alpha = 0.4;
 
 			animation_done();
 		});

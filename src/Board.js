@@ -129,13 +129,13 @@ var path_matrixes = {
 };
 
 var default_rvbr_board = [
-	[['yellow',  90], null, ['book',  180], null, ['coins', 180], null, ['red',   180]],
-	[null,            null, null,           null, null,           null, null          ],
-	[['map',     90], null, ['crown',  90], null, ['keys',  180], null, ['skull', 270]],
-	[null,            null, null,           null, null,           null, null          ],
-	[['ring',    90], null, ['chest',   0], null, ['ruby',  270], null, ['sword', 270]],
-	[null,            null, null,           null, null,           null, null          ],
-	[['green',    0], null, ['candles', 0], null, ['helmet',  0], null, ['blue',  270]]
+	[['c',    90], null, ['book',  180], null, ['coins', 180], null, ['c',     180]],
+	[null,         null, null,           null, null,           null, null          ],
+	[['map',  90], null, ['crown',  90], null, ['keys',  180], null, ['skull', 270]],
+	[null,         null, null,           null, null,           null, null          ],
+	[['ring', 90], null, ['chest',   0], null, ['ruby',  270], null, ['sword', 270]],
+	[null,         null, null,           null, null,           null, null          ],
+	[['c',     0], null, ['candles', 0], null, ['helmet',  0], null, ['c',     270]]
 ];
 
 var default_rvbr_tiles = ['mouse', 'moth', 'beetle', 'spider', 'troll', 'genie', 'ghost', 'bat', 'fairy', 'dragon', 'newt', 'owl']

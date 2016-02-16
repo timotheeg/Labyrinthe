@@ -236,7 +236,6 @@ Game.prototype.movePlayer = function(player, target) {
 
 	// check if player is acquiring his next treasure
 	var tile = this.board.getTile(target.x, target.y)[0];
-	console.log(tile, this.board.getTile(target.x, target.y));
 	var get_treasure = false;
 	if (treasures.indexOf(tile) >= 0) {
 		if (player.isNextTreasure(tile)) {
