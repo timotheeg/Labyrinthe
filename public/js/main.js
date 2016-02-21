@@ -50,6 +50,11 @@ var grid7x7 = new Array(GRID_SIZE);
 for (var idx=GRID_SIZE; idx--;) grid7x7[idx] = new Array(GRID_SIZE);
 
 $(function(){
+	if (screenfull.enabled) {
+		screenfull.request();
+	}
+
+	// preload assets
 	queue = new createjs.LoadQueue(false);
 	queue.on("complete", connectSocket, this);
 	
@@ -457,7 +462,7 @@ function movePlayer(data) {
 		marker = player.marker;
 
 	if (data.path.length <= 1) {
-		// already in place
+		// already in place, stop the scaling animation
 		createjs.Tween.get(player.marker.circle, {override:true})
 			.to({scaleX: 1, scaleY: 1, alpha: 0.4}, 250);
 		

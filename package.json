@@ -22,6 +22,7 @@
     "morgan": "~1.6.1",
     "node-pathfinding": "^0.2.6",
     "q": "~1.4.1",
+    "screenfull": "^3.0.0",
     "serve-favicon": "~2.3.0",
     "socket.io": "~1.4.5"
   }
