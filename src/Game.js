@@ -169,11 +169,22 @@ Game.prototype.nextTurn = function() {
 	this.turn_idx = (this.turn_idx + 1) % this.players.length;
 
 	player = this.players[this.turn_idx];
-	player.setCurrent(true);
 
-	// inform everyone the new player has arrived
-	this.state = WAITING_SHIFT;
-	this.broadcaster.emit('current_player', this.turn_idx);
+	if (!player.isDone()) {
+		player.setCurrent(true);
+		this.state = WAITING_SHIFT;
+		this.broadcaster.emit('current_player', this.turn_idx);
+	}
+	else {
+		// check if there's any player left who is not done
+		for (var idx=this.players.length; idx--;) {
+			if (!this.players[idx].isDone()) return this.nextTurn();
+		}
+
+		// Game Over, all players are done!
+		this.state = STOPPED;
+		this.broadcaster.emit('game_over', this.turn_idx);
+	}
 };
 
 Game.prototype.shiftBoard = function(data) {
