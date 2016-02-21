@@ -1,7 +1,7 @@
 var
 	utils  = require('./utils'),
-	Board  = require('./board'),
-	Player = require('./player');
+	Board  = require('./Board'),
+	Player = require('./Player');
 
 module.exports = Game;
 
