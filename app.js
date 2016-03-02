@@ -101,4 +101,4 @@ iorooms.on('connection', function(socket) {
 	game.addPlayer(name, socket);
 });
 
-server.listen(80);
+server.listen(30001);

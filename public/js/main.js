@@ -51,9 +51,31 @@ for (var idx=GRID_SIZE; idx--;) grid7x7[idx] = new Array(GRID_SIZE);
 
 $(function(){
 	if (screenfull.enabled) {
-		screenfull.request();
-	}
 
+		function getStarted(evt) {
+			document.removeEventListener(screenfull.raw.fullscreenchange, getStarted);
+			document.removeEventListener(screenfull.raw.fullscreenerror,  getStarted);
+
+			setTimeout(init, 500);
+		}
+
+		document.addEventListener(screenfull.raw.fullscreenchange, getStarted);
+		document.addEventListener(screenfull.raw.fullscreenerror,  getStarted);
+
+		$('#fs')
+			.click(function(evt) {
+				evt.preventDefault();
+				$('#fs').hide();
+				screenfull.request();
+			});
+	}
+	else {
+		$('#fs').hide();
+		init();
+	}
+});
+
+function init() {
 	// preload assets
 	queue = new createjs.LoadQueue(false);
 	queue.on("complete", connectSocket, this);
@@ -69,13 +91,22 @@ $(function(){
 	$('#start').click(function() {
 		socket.emit('start');
 	});
-
-	$('#move').click(function() {
-		socket.emit('move');
-	});
-});
+};
 
 function setupBoard(board_setup) {
+	console.log('setupBoard');
+	// prepare the board for dpi management
+
+	var board_cvs = $('#board').attr({width: BOARD_SIZE, height: BOARD_SIZE});
+
+	// horizontal tryouts for now...
+	if (window.innerWidth < BOARD_SIZE) {
+		board_cvs.css({width: window.innerWidth, height: window.innerWidth});
+	}
+	else if (window.innerHeight < BOARD_SIZE) {
+		board_cvs.css({width: window.innerHeight, height: window.innerHeight});
+	}
+
 	stage = new createjs.Stage("board");
 	stage.enableMouseOver(20);
 	
@@ -126,7 +157,7 @@ function setupBoard(board_setup) {
 
 function setupPlayer(player) {
 	if (players[player.color]) {
-		$.extends(players[player.color], player);
+		$.extend(players[player.color], player);
 	}
 	else {
 		players[player.color] = player;
@@ -626,9 +657,9 @@ function getTriangleGraphic() {
 	g.lineTo(60, 45);
 	g.lineTo(0, 90);
 	g.endFill();
-	
+
 	var shape = new createjs.Shape(g);
-	
+
 	shape.regX = 0;
 	shape.regY = 45;
 
