@@ -9,12 +9,18 @@ var tiles = {
 	s: 'img/tiles/straight.png'
 };
 
+var stage;
+
+var main_container;
+var board_container;
+var players_container;
+var controls_container;
+
 var board;
 var players = {};
 var buttons = {};
 var current_player_index = -1;
 var last_shift = null;
-var stage;
 var queue;
 var ctrl_piece;
 
@@ -51,7 +57,6 @@ for (var idx=GRID_SIZE; idx--;) grid7x7[idx] = new Array(GRID_SIZE);
 
 $(function(){
 	if (screenfull.enabled) {
-
 		function getStarted(evt) {
 			document.removeEventListener(screenfull.raw.fullscreenchange, getStarted);
 			document.removeEventListener(screenfull.raw.fullscreenerror,  getStarted);
@@ -65,7 +70,7 @@ $(function(){
 		$('#fs')
 			.click(function(evt) {
 				evt.preventDefault();
-				$('#fs').hide();
+				$(this).hide();
 				screenfull.request();
 			});
 	}
@@ -76,6 +81,8 @@ $(function(){
 });
 
 function init() {
+	setupStage();
+
 	// preload assets
 	queue = new createjs.LoadQueue(false);
 	queue.on("complete", connectSocket, this);
@@ -93,41 +100,113 @@ function init() {
 	});
 };
 
+function resize() {
+	// Resize canvas area based on BOARD_SIZE
+	// TODO: use a dynamic approach
+
+	var
+		width, height,
+		screen_ratio = window.innerWidth / window.innerHeight,
+		is_landscape = screen_ratio > 1;
+
+	if (is_landscape) {
+		// landscape
+		// board will fit height, need to determine width
+		width = Math.round(BOARD_SIZE * screen_ratio);
+		height = BOARD_SIZE;
+	}
+	else {
+		// portait
+		// board will fit width, need to determine height
+		width = BOARD_SIZE;
+		height = Math.round(BOARD_SIZE / screen_ratio);
+	}
+
+	// canvas rendering takes all available space
+	$('#stage')
+		.attr({width: width, height: height})
+		.css({width: window.innerWidth, height: window.innerHeight});
+
+	stage.canvas.width  = width;
+	stage.canvas.height = height;
+
+	// adjust visual element in canvas
+	// TODO: animate
+	board_container.x = 0;
+	board_container.y = 0;
+
+	if (is_landscape) {
+		controls_container.x = BOARD_SIZE;
+		controls_container.y = 0;
+		controls_container.setSize(width - BOARD_SIZE, BOARD_SIZE / 2);
+
+		players_container.x = BOARD_SIZE;
+		players_container.y = BOARD_SIZE / 2;
+		players_container.setSize(width - BOARD_SIZE, BOARD_SIZE / 2);
+	}
+	else {
+		controls_container.y = BOARD_SIZE;
+		controls_container.x = 0;
+		controls_container.setSize(BOARD_SIZE / 2, height - BOARD_SIZE);
+
+		players_container.y = BOARD_SIZE;
+		players_container.x = BOARD_SIZE / 2;
+		players_container.setSize(BOARD_SIZE / 2, height - BOARD_SIZE);
+	}
+}
+
+function setupStage() {
+	stage = new createjs.Stage("stage");
+	stage.enableMouseOver(20);
+
+	main_container = new createjs.Container();
+	stage.addChild(main_container);
+
+	board_container = new createjs.Container();
+	main_container.addChild(board_container);
+
+	players_container = new createjs.Container();
+	main_container.addChild(players_container);
+	players_container.setSize = setPlayersSize;
+	players_container.player1 = new createjs.Container();
+	players_container.addChild(players_container.player1);
+	players_container.player2 = new createjs.Container();
+	players_container.addChild(players_container.player2);
+	players_container.player3 = new createjs.Container();
+	players_container.addChild(players_container.player3);
+	players_container.player4 = new createjs.Container();
+	players_container.addChild(players_container.player4);
+
+	controls_container = new createjs.Container();
+	main_container.addChild(controls_container);
+	controls_container.setSize = setControlsSize;
+	controls_container.card    = new createjs.Container();
+	controls_container.addChild(controls_container.card);
+	controls_container.control = new createjs.Container();
+	controls_container.addChild(controls_container.control);
+
+	board = new createjs.Container();
+	board.x = board.y = board.regX = board.regY = BOARD_SIZE / 2;
+	board_container.addChild(board);
+
+	createjs.Ticker.addEventListener('tick', tick);
+
+	window.addEventListener('resize', resize, false);
+	resize();
+}
+
 function setupBoard(board_setup) {
 	console.log('setupBoard');
 	// prepare the board for dpi management
 
-	var board_cvs = $('#board').attr({width: BOARD_SIZE, height: BOARD_SIZE});
-
-	// horizontal tryouts for now...
-	if (window.innerWidth < BOARD_SIZE) {
-		board_cvs.css({width: window.innerWidth, height: window.innerWidth});
-	}
-	else if (window.innerHeight < BOARD_SIZE) {
-		board_cvs.css({width: window.innerHeight, height: window.innerHeight});
-	}
-
-	stage = new createjs.Stage("board");
-	stage.enableMouseOver(20);
-	
-	board = new createjs.Container();
-	
-	board.x = board.y = board.regX = board.regY = BOARD_SIZE / 2;
 	board.rotation = me.rotation;
-	
-	stage.addChild(board);
-	
-	ctrl_stage = new createjs.Stage("ctrl");
-	createjs.Ticker.addEventListener("tick", tick);
 	
 	addTriangleControls();
 
 	ctrl_piece = getPiece( board_setup.ctrl );
-	
-	ctrl_piece.y = ctrl_piece.x = (191 - 135) / 2;
-	ctrl_stage.addChild(ctrl_piece);
-	
 	ctrl_piece.addEventListener('click', rotateControl);
+
+	controls_container.control.addChild(ctrl_piece);
 
 	for (var row_idx=0; row_idx<GRID_SIZE; row_idx++) {
 		for (var col_idx=0; col_idx<GRID_SIZE; col_idx++) {
@@ -155,6 +234,48 @@ function setupBoard(board_setup) {
 	tick();
 }
 
+function setPlayersSize() {
+	// TODO
+}
+
+function setControlsSize(width, height) {
+	var
+		min_space   = 10,
+		card_width  = 179,
+		card_height = 280,
+		ctrl_size   = TILE_SIZE; // 135
+
+	// find smallest scale ratio to apply to both card and control
+	var scale, scaleH=1, scaleW=1;
+
+	if (card_height + min_space * 2 > height) {
+		scaleH = (height - min_space * 2) / card_height;
+	}
+
+	if (card_width + ctrl_size + min_space * 3 > width) {
+		scaleW = (width - min_space * 3) / (card_width + ctrl_size);
+	}
+
+	scale = Math.min(scaleH, scaleW);
+
+	this.card.scaleX
+		= this.card.scaleY
+		= this.control.scaleX
+		= this.control.scaleY
+		= scale;
+
+	// now that sizes are fixed, do actual placement
+	var
+		space_v = Math.floor((height - card_height * scale) / 2),
+		space_h = Math.floor((width - card_width * scale - ctrl_size * scale) / 3);
+
+	this.card.x = space_h;
+	this.card.y = space_v;
+
+	this.control.x = space_h * 2 + Math.round(card_width * scale);
+	this.control.y = Math.floor((height - ctrl_size * scale) / 2);
+}
+
 function setupPlayer(player) {
 	if (players[player.color]) {
 		$.extend(players[player.color], player);
@@ -171,7 +292,6 @@ function setupPlayer(player) {
 
 function tick() {
 	stage.update();
-	ctrl_stage.update();
 }
 
 function start() {
@@ -214,6 +334,7 @@ function shiftTiles(data) {
 	buttons[token].visible = false;
 
 	piece.removeEventListener('click', rotateControl);
+	piece.addEventListener('click', requestMove);
 	
 	piece.lab_meta.mc.rotation = data.ctrl_rotation;
 	
@@ -317,19 +438,15 @@ function shiftTiles(data) {
 				.call(shiftComplete, [data, piece, mc]);
 		}
 	}
-} 
+}
 
 function shiftComplete(data, added_piece, ejected_piece) {
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
-	ctrl_piece.addEventListener('click', requestMove);
-	stage.removeChild(ejected_piece);
-	ctrl_stage.removeChild(ctrl_piece);
-
 	ctrl_piece = ejected_piece;
-	ctrl_piece.y = ctrl_piece.x = (191 - 135) / 2;
 	ctrl_piece.addEventListener('click', rotateControl);
-	ctrl_stage.addChild(ctrl_piece);
+	ctrl_piece.x = ctrl_piece.y = 0;
+	controls_container.control.addChild(ctrl_piece);
 
 	if ('row_idx' in data) {
 		if (data.direction >= 1) {
@@ -410,6 +527,22 @@ function requestMove(evt) {
 		x: target.col_idx,
 		y: target.row_idx
 	});
+}
+
+function getCard(treasure_name) {
+	var mc = new createjs.Container();
+
+	// card background
+	mc.addChild(
+		new createjs.Bitmap("/img/cards/front.png")
+	);
+
+	var treasure = new createjs.Bitmap(queue.getResult(treasure_name));
+	treasure.x = 23;
+	treasure.y = 73;
+	mc.addChild(treasure);
+
+	return mc;
 }
 
 function getPiece(name, rotation) {
@@ -544,7 +677,8 @@ function movePlayer(data) {
 
 function nextTreasure(treasure) {
 	me.next_treasure = treasure;
-	$('#next_treasure').css('background-image', 'url("/img/treasures/' + me.next_treasure + '.png")');
+	controls_container.card.removeChildAt(0);
+	controls_container.card.addChild(getCard(treasure));
 	animation_done();
 }
 

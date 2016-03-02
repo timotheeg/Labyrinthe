@@ -24,8 +24,6 @@ function connectSocket()
 
 		me = player;
 
-		$('#next_treasure').css('background-image', 'url("/img/treasures/' + me.next_treasure + '.png")');
-
 		if (me.index <= 0) {
 			$('#start').show();
 		}
@@ -33,7 +31,7 @@ function connectSocket()
 			$('#start').hide();
 		}
 
-		$('#card, #buttons').show();
+		nextTreasure(me.next_treasure);
 	});
 
 	socket.on('lab_error', function (data) {
