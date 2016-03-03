@@ -2,6 +2,8 @@ var BOARD_SIZE = 1080;
 var GRID_SIZE = 7;
 var TILE_SIZE = 135;
 var HALF_SIZE = TILE_SIZE / 2;
+var CARD_WIDTH = 179;
+var CARD_HEIGHT = 280;
 
 var tiles = {
 	T: 'img/tiles/T.png',
@@ -56,7 +58,7 @@ var grid7x7 = new Array(GRID_SIZE);
 for (var idx=GRID_SIZE; idx--;) grid7x7[idx] = new Array(GRID_SIZE);
 
 $(function(){
-	if (screenfull.enabled) {
+	if (false && screenfull.enabled) {
 		function getStarted(evt) {
 			document.removeEventListener(screenfull.raw.fullscreenchange, getStarted);
 			document.removeEventListener(screenfull.raw.fullscreenerror,  getStarted);
@@ -241,19 +243,17 @@ function setPlayersSize() {
 function setControlsSize(width, height) {
 	var
 		min_space   = 10,
-		card_width  = 179,
-		card_height = 280,
 		ctrl_size   = TILE_SIZE; // 135
 
 	// find smallest scale ratio to apply to both card and control
 	var scale, scaleH=1, scaleW=1;
 
-	if (card_height + min_space * 2 > height) {
-		scaleH = (height - min_space * 2) / card_height;
+	if (CARD_HEIGHT + min_space * 2 > height) {
+		scaleH = (height - min_space * 2) / CARD_HEIGHT;
 	}
 
-	if (card_width + ctrl_size + min_space * 3 > width) {
-		scaleW = (width - min_space * 3) / (card_width + ctrl_size);
+	if (CARD_WIDTH + ctrl_size + min_space * 3 > width) {
+		scaleW = (width - min_space * 3) / (CARD_WIDTH + ctrl_size);
 	}
 
 	scale = Math.min(scaleH, scaleW);
@@ -266,13 +266,13 @@ function setControlsSize(width, height) {
 
 	// now that sizes are fixed, do actual placement
 	var
-		space_v = Math.floor((height - card_height * scale) / 2),
-		space_h = Math.floor((width - card_width * scale - ctrl_size * scale) / 3);
+		space_v = Math.floor((height - CARD_HEIGHT * scale) / 2),
+		space_h = Math.floor((width - CARD_WIDTH * scale - ctrl_size * scale) / 3);
 
 	this.card.x = space_h;
 	this.card.y = space_v;
 
-	this.control.x = space_h * 2 + Math.round(card_width * scale);
+	this.control.x = space_h * 2 + Math.round(CARD_WIDTH * scale);
 	this.control.y = Math.floor((height - ctrl_size * scale) / 2);
 }
 
@@ -444,6 +444,7 @@ function shiftComplete(data, added_piece, ejected_piece) {
 	// animation is complete, now, we update the grid
 	// piece that was pushed becomes new control piece
 	ctrl_piece = ejected_piece;
+	ctrl_piece.removeEventListener('click', requestMove);
 	ctrl_piece.addEventListener('click', rotateControl);
 	ctrl_piece.x = ctrl_piece.y = 0;
 	controls_container.control.addChild(ctrl_piece);
@@ -541,6 +542,10 @@ function getCard(treasure_name) {
 	treasure.x = 23;
 	treasure.y = 73;
 	mc.addChild(treasure);
+
+	mc.snapToPixel = true;
+	mc.x = mc.regX = CARD_WIDTH / 2;
+	mc.y = mc.regY = CARD_HEIGHT / 2;
 
 	return mc;
 }
@@ -677,9 +682,41 @@ function movePlayer(data) {
 
 function nextTreasure(treasure) {
 	me.next_treasure = treasure;
-	controls_container.card.removeChildAt(0);
-	controls_container.card.addChild(getCard(treasure));
-	animation_done();
+
+	var
+		cur_card = controls_container.card.children[0],
+		nex_card = getCard(treasure);
+
+	if (cur_card) {
+		createjs.Tween.get(cur_card)
+			.to(
+				{
+					scaleX: 0,
+					scaleY: 0,
+					alpha: 0
+				},
+				350
+			);
+	}
+
+	nex_card.scaleX = nex_card.scaleY = 1.5;
+	nex_card.alpha = 0;
+
+	controls_container.card.addChild(nex_card);
+
+	createjs.Tween.get(nex_card)
+		.to(
+			{
+				scaleX: 1,
+				scaleY: 1,
+				alpha: 1
+			},
+			350
+		)
+		.call(function() {
+			controls_container.card.removeChild(cur_card);
+			animation_done();
+		});
 }
 
 function addTriangleControls() {
