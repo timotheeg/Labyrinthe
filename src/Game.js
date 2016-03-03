@@ -57,8 +57,12 @@ var treasures = [
 Game.TREASURE_DECK = treasures.concat(treasures);
 
 Game.getTreasureDeck = function() {
-	// each game gets its own copy of the deck, shuffled
-	return utils.shuffle(Game.TREASURE_DECK.concat());
+	// each game gets its own copy of the deck, shuffled, with no player-wide repeats
+	var
+		half_deck_1 = utils.shuffle(treasures.concat()),
+		half_deck_2 = utils.shuffle(treasures.concat());
+
+	return half_deck_1.concat(half_deck_2);
 };
 
 Game.prototype._init = function() {
