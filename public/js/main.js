@@ -4,6 +4,8 @@ var TILE_SIZE = 135;
 var HALF_SIZE = TILE_SIZE / 2;
 var CARD_WIDTH = 179;
 var CARD_HEIGHT = 280;
+var CARD_RATIO = CARD_WIDTH / CARD_HEIGHT;
+var MIN_SPACE = 10;
 
 var tiles = {
 	T: 'img/tiles/T.png',
@@ -19,7 +21,9 @@ var players_container;
 var controls_container;
 
 var board;
+var players_arr = [];
 var players = {};
+var player_statuses = [];
 var buttons = {};
 var current_player_index = -1;
 var last_shift = null;
@@ -236,24 +240,110 @@ function setupBoard(board_setup) {
 	tick();
 }
 
-function setPlayersSize() {
-	// TODO
+function setPlayersSize(width, height) {
+	if (arguments.length <= 0) {
+		width = this.__width;
+		height = this.__height;
+	}
+	else {
+		this.__width = width;
+		this.__height = height;
+	}
+
+	if (width === undefined || height === undefined) return;
+
+	// compute display size of acquired treasures
+	// TODO: account for not very little space
+	var
+		self = this,
+		halfW = (width - MIN_SPACE * 3) / 2,
+		halfH = (height - MIN_SPACE * 3) / 2,
+		card_width = (halfW - MIN_SPACE * 7) / 6,
+		card_height = (halfH - MIN_SPACE * 3) / 2,
+		card_ratio = card_width / card_height;
+
+	// TODO: handle negative values! => must reduce spacing if they happen
+	if (card_ratio > CARD_RATIO) {
+		// card ratio is stretched horixontally, must adjust the horizontal space
+		this.__card_scale = card_height / CARD_HEIGHT;
+		this.__card_width = CARD_WIDTH * this.__card_scale;
+		this.__card_height = card_height;
+		this.__card_h_space = (halfW - this.__card_width * 6) / 7;
+		this.__card_v_space = (halfH - card_height * 2) / 3;
+	}
+	else {
+		// card ratio is stretched vertically, must adjust the vertical space
+		this.__card_scale = card_width / CARD_WIDTH;
+		this.__card_width = card_width;
+		this.__card_height = CARD_HEIGHT * this.__card_scale;
+		this.__card_h_space = (halfW - card_width * 6) / 7;
+		this.__card_v_space = (halfH - this.__card_height * 2) / 3;
+	}
+
+	// resize the background to indicate where the player data will go
+	try {
+		this.player1.bg.scaleX = halfW;
+		this.player1.bg.scaleY = halfH;
+		this.player1.x = MIN_SPACE;
+		this.player1.y = MIN_SPACE;
+		adjustTreasures(this.player1);
+
+		this.player2.bg.scaleX = halfW;
+		this.player2.bg.scaleY = halfH;
+		this.player2.x = halfW + MIN_SPACE * 2;
+		this.player2.y = MIN_SPACE;
+		adjustTreasures(this.player2);
+
+		this.player3.bg.scaleX = halfW;
+		this.player3.bg.scaleY = halfH;
+		this.player3.x = MIN_SPACE;
+		this.player3.y = halfH + MIN_SPACE * 2;
+		adjustTreasures(this.player3);
+
+		this.player4.bg.scaleX = halfW;
+		this.player4.bg.scaleY = halfH;
+		this.player4.x = halfW + MIN_SPACE * 2;
+		this.player4.y = halfH + MIN_SPACE * 2;
+		adjustTreasures(this.player4);
+	}
+	catch(e) {
+		// console.error(e);
+	}
+
+	function adjustTreasures(player) {
+		try {
+			var card;
+
+			for (var idx=0; idx<6; idx++) {
+				var card = player.treasures[idx];
+				card.scaleX = card.scaleY = self.__card_scale;
+				card.x = self.__card_h_space + (self.__card_h_space + self.__card_width) * idx;
+				card.y = self.__card_v_space;
+			}
+
+			for (var idx=6; idx<12; idx++) {
+				var card = player.treasures[idx];
+				card.scaleX = card.scaleY = self.__card_scale;
+				card.x = self.__card_h_space + (self.__card_h_space + self.__card_width) * (idx - 6);
+				card.y = self.__card_v_space * 2 + self.__card_height;
+			}
+		}
+		catch(e) {
+			// console.error(e);
+		}
+	}
 }
 
 function setControlsSize(width, height) {
-	var
-		min_space   = 10,
-		ctrl_size   = TILE_SIZE; // 135
-
 	// find smallest scale ratio to apply to both card and control
-	var scale, scaleH=1, scaleW=1;
+	var scale, scaleH = 1, scaleW = 1;
 
-	if (CARD_HEIGHT + min_space * 2 > height) {
-		scaleH = (height - min_space * 2) / CARD_HEIGHT;
+	if (CARD_HEIGHT + MIN_SPACE * 2 > height) {
+		scaleH = (height - MIN_SPACE * 2) / CARD_HEIGHT;
 	}
 
-	if (CARD_WIDTH + ctrl_size + min_space * 3 > width) {
-		scaleW = (width - min_space * 3) / (CARD_WIDTH + ctrl_size);
+	if (CARD_WIDTH + TILE_SIZE + MIN_SPACE * 3 > width) {
+		scaleW = (width - MIN_SPACE * 3) / (CARD_WIDTH + TILE_SIZE);
 	}
 
 	scale = Math.min(scaleH, scaleW);
@@ -267,27 +357,46 @@ function setControlsSize(width, height) {
 	// now that sizes are fixed, do actual placement
 	var
 		space_v = Math.floor((height - CARD_HEIGHT * scale) / 2),
-		space_h = Math.floor((width - CARD_WIDTH * scale - ctrl_size * scale) / 3);
+		space_h = Math.floor((width - CARD_WIDTH * scale - TILE_SIZE * scale) / 3);
 
 	this.card.x = space_h;
 	this.card.y = space_v;
 
 	this.control.x = space_h * 2 + Math.round(CARD_WIDTH * scale);
-	this.control.y = Math.floor((height - ctrl_size * scale) / 2);
+	this.control.y = Math.floor((height - TILE_SIZE * scale) / 2);
 }
 
 function setupPlayer(player) {
 	if (players[player.color]) {
 		$.extend(players[player.color], player);
+		return;
 	}
-	else {
-		players[player.color] = player;
-	}
+
+	players[player.color] = player;
 
 	// create player marker and place it on the board
 	player.marker = getPlayerMarker(player.color);
 
 	grid7x7[player.y][player.x].addChild(player.marker);
+
+	// set up player grid
+	players_arr.push(player);
+	player.status = getPlayerStatus(
+		players_container['player' + players_arr.length],
+		player.color
+	);
+
+	players_container.setSize();
+}
+
+function playerGetsTreasure(data) {
+	var card = getCard(data.treasure);
+	card.x = card.y = card.regX = card.regY = 0;
+
+	players[data.player.color].status.treasures.push(card);
+	players[data.player.color].status.addChild(card);
+	players_container.setSize();
+	animation_done();
 }
 
 function tick() {
@@ -607,6 +716,21 @@ function getPlayerMarker(color) {
 
 	mc.addChild(circle);
 	mc.circle = circle;
+
+	return mc;
+}
+
+function getPlayerStatus(mc, color) {
+	var bg = new createjs.Shape();
+	bg.graphics
+		.beginFill(color)
+		.drawRect(0, 0, 1, 1); // a 1x1 rectangle can be scaled to dimensions :)
+
+	bg.alpha = 0.75;
+
+	mc.addChild(bg);
+	mc.bg = bg;
+	mc.treasures = [];
 
 	return mc;
 }

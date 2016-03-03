@@ -78,6 +78,7 @@ Game.prototype._getNextHand = function() {
 };
 
 Game.prototype.addPlayer = function(name, socket) {
+	// create the new player object
 	var player = new Player(
 		this.players.length,
 		socket,
@@ -253,6 +254,13 @@ Game.prototype.movePlayer = function(player, target) {
 			get_treasure = true;
 			player.acquireTreasure();
 		}
+	}
+
+	if (get_treasure) {
+		this.broadcaster.emit('player_gets_treasure', {
+			player: player.toJSON(),
+			treasure: tile
+		});
 	}
 
 	this.nextTurn();

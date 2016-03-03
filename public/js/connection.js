@@ -25,10 +25,7 @@ function connectSocket()
 		me = player;
 
 		if (me.index <= 0) {
-			$('#start').show();
-		}
-		else {
-			$('#start').hide();
+			// TODO: show start button
 		}
 
 		nextTreasure(me.next_treasure);
@@ -71,6 +68,13 @@ function connectSocket()
 		execute();
 	});
 
+	socket.on('player_gets_treasure', function (data) {
+		// player is moving
+		// data also tells us whether player has reached his treasure
+		action_queue.push(['player_gets_treasure', data]);
+		execute();
+	});
+
 	socket.on('current_player', function (data) {
 		action_queue.push(['current_player', data]);
 		execute();
@@ -89,6 +93,9 @@ function execute() {
 			break;
 		case 'player_move':
 			movePlayer(action[1]);
+			break;
+		case 'player_gets_treasure':
+			playerGetsTreasure(action[1]);
 			break;
 		case 'next_treasure':
 			nextTreasure(action[1]);
