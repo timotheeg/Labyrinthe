@@ -258,26 +258,30 @@ function setPlayersSize(width, height) {
 		self = this,
 		halfW = (width - MIN_SPACE * 3) / 2,
 		halfH = (height - MIN_SPACE * 3) / 2,
-		card_width = (halfW - MIN_SPACE * 7) / 6,
-		card_height = (halfH - MIN_SPACE * 3) / 2,
+		margin_w = MIN_SPACE,
+		margin_h = MIN_SPACE,
+		card_available_width = halfW - margin_w * 2,
+		card_available_height = halfH - margin_h * 2,
+		card_width = card_available_width / 6,
+		card_height = card_available_height / 2,
 		card_ratio = card_width / card_height;
 
-	// TODO: handle negative values! => must reduce spacing if they happen
+	// TODO: handle negative values! => must handle spacing if that happens
 	if (card_ratio > CARD_RATIO) {
-		// card ratio is stretched horixontally, must adjust the horizontal space
+		// card ratio is stretched horizontally, must adjust the horizontal space
+		this.__card_height = card_height;
 		this.__card_scale = card_height / CARD_HEIGHT;
 		this.__card_width = CARD_WIDTH * this.__card_scale;
-		this.__card_height = card_height;
-		this.__card_h_space = (halfW - this.__card_width * 6) / 7;
-		this.__card_v_space = (halfH - card_height * 2) / 3;
+		this.__card_h_space = margin_w = (halfW - this.__card_width * 6) / 7;
+		this.__card_v_space = 0;
 	}
 	else {
 		// card ratio is stretched vertically, must adjust the vertical space
-		this.__card_scale = card_width / CARD_WIDTH;
 		this.__card_width = card_width;
+		this.__card_scale = card_width / CARD_WIDTH;
 		this.__card_height = CARD_HEIGHT * this.__card_scale;
-		this.__card_h_space = (halfW - card_width * 6) / 7;
-		this.__card_v_space = (halfH - this.__card_height * 2) / 3;
+		this.__card_h_space = 0;
+		this.__card_v_space = margin_h = (halfH - this.__card_height * 2) / 3;
 	}
 
 	// resize the background to indicate where the player data will go
@@ -317,15 +321,15 @@ function setPlayersSize(width, height) {
 			for (var idx=0; idx<6; idx++) {
 				var card = player.treasures[idx];
 				card.scaleX = card.scaleY = self.__card_scale;
-				card.x = self.__card_h_space + (self.__card_h_space + self.__card_width) * idx;
-				card.y = self.__card_v_space;
+				card.x = margin_w + (self.__card_h_space + self.__card_width) * idx;
+				card.y = margin_h;
 			}
 
 			for (var idx=6; idx<12; idx++) {
 				var card = player.treasures[idx];
 				card.scaleX = card.scaleY = self.__card_scale;
-				card.x = self.__card_h_space + (self.__card_h_space + self.__card_width) * (idx - 6);
-				card.y = self.__card_v_space * 2 + self.__card_height;
+				card.x = margin_w + (self.__card_h_space + self.__card_width) * (idx - 6);
+				card.y = margin_h * 2 + self.__card_height;
 			}
 		}
 		catch(e) {
