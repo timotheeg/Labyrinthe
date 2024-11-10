@@ -10,11 +10,11 @@ var GRID_SIZE = 7;
 // states enum
 var
 	i = 0,
-	PENDING       = 1 << ++i,
-	STARTED       = 1 << ++i,
-	WAITING_SHIFT = 1 << ++i,
-	WAITING_MOVE  = 1 << ++i,
-	STOPPED       = 1 << ++i
+	PENDING       = 1 << i++,
+	STARTED       = 1 << i++,
+	WAITING_SHIFT = 1 << i++,
+	WAITING_MOVE  = 1 << i++,
+	STOPPED       = 1 << i++
 ;
 
 function Game(room_id, broadcaster, treasures_per_player) {
