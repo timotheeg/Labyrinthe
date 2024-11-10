@@ -809,7 +809,7 @@ function nextTreasure(treasure) {
 
 	var
 		cur_card = controls_container.card.children[0],
-		nex_card = getCard(treasure);
+		next_card = getCard(treasure);
 
 	if (cur_card) {
 		createjs.Tween.get(cur_card)
@@ -823,12 +823,12 @@ function nextTreasure(treasure) {
 			);
 	}
 
-	nex_card.scaleX = nex_card.scaleY = 1.5;
-	nex_card.alpha = 0;
+	next_card.scaleX = next_card.scaleY = 1.5;
+	next_card.alpha = 0;
 
-	controls_container.card.addChild(nex_card);
+	controls_container.card.addChild(next_card);
 
-	createjs.Tween.get(nex_card)
+	createjs.Tween.get(next_card)
 		.to(
 			{
 				scaleX: 1,
