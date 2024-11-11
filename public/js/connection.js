@@ -13,10 +13,31 @@ var
 	WAITING_SETUP    = 1 << ++i,
 	WAITING_REGISTER = 1 << ++i;
 
+function getRoomId() {
+	return location.pathname.split('/').pop();
+}
+
+function getClientId() {
+	const roomid = getRoomId();
+	const storeKey = `${roomid}-clientid`
+	let clientid = sessionStorage.getItem(storeKey);
+
+	if (!clientid) {
+		clientid = crypto.randomUUID();
+		sessionStorage.setItem(storeKey, clientid);
+	}
+
+	return clientid;
+}
+
 function connectSocket()
 {
+	// extract room id from query string
+	const roomid = getRoomId();
+	const clientid = getClientId();
+
 	socket = io.connect('/rooms', {
-		query: "room_id=_r1234" + location.search.substr(1)
+		query: `room_id=_r${roomid}&client_id=${clientid}`
 	});
 
 	socket.on('registered', function (player) {
