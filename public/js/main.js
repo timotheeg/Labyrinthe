@@ -8,9 +8,9 @@ var CARD_RATIO = CARD_WIDTH / CARD_HEIGHT;
 var MIN_SPACE = 10;
 
 var tiles = {
-	T: 'img/tiles/T.png',
-	c: 'img/tiles/corner.png',
-	s: 'img/tiles/straight.png'
+	T: 'img/tiles/T.webp',
+	c: 'img/tiles/corner.webp',
+	s: 'img/tiles/straight.webp'
 };
 
 var stage;
@@ -98,7 +98,7 @@ function init() {
 	}
 	
 	for (var key in treasure_tiles) {
-		queue.loadFile({id: key, src: 'img/treasures/' + key + '.png'});
+		queue.loadFile({id: key, src: 'img/treasures/' + key + '.webp'});
 	}
 
 	$('#start').click(function() {
@@ -648,7 +648,7 @@ function getCard(treasure_name) {
 
 	// card background
 	mc.addChild(
-		new createjs.Bitmap("/img/cards/front.png")
+		new createjs.Bitmap("/img/cards/front.webp")
 	);
 
 	var treasure = new createjs.Bitmap(queue.getResult(treasure_name));
