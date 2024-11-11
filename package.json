@@ -16,7 +16,7 @@
     "url": "https://github.com/timotheeg/Labyrinthe/issues"
   },
   "dependencies": {
-    "express": "~4.13.4",
+    "express": "^4.21.1",
     "jade": "~1.11.0",
     "lodash": "~4.3.0",
     "morgan": "~1.6.1",

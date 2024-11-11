@@ -4,23 +4,18 @@ var logger = require('morgan');
 
 var Game = require('./src/Game');
 
-// var favicon = require('serve-favicon');
-// var routes = require('./routes/index');
-
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
 
-// view engine setup
-// app.set('views', path.join(__dirname, 'views'));
-// app.set('view engine', 'jade');
-
-// uncomment after placing your favicon in /public
-// app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 app.use(logger('dev'));
-app.use(express.static(path.join(__dirname, 'public')));
 
-// app.use('/', routes);
+app.get('/r/:id', function (req, res) {
+	console.log('foo')
+	res.sendFile(__dirname + '/public/index.html');
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {
@@ -42,20 +37,17 @@ if (app.get('env') === 'development') {
     });
   });
 }
-
-// production error handler
-// no stacktraces leaked to user
-app.use(function(err, req, res, next) {
-  res.status(err.status || 500);
-  res.render('error', {
-    message: err.message,
-    error: {}
-  });
-});
-
-app.get('/', function (req, res) {
-  res.sendFile(__dirname + '/public/index.html');
-});
+else {
+	// production error handler
+	// no stacktraces leaked to user
+	app.use(function(err, req, res, next) {
+		res.status(err.status || 500);
+		res.render('error', {
+			message: err.message,
+			error: {}
+		});
+	});
+}
 
 
 var rooms = new Map();
@@ -64,6 +56,7 @@ var iorooms = io.of('/rooms');
 iorooms.on('connection', function(socket) {
 	// check rooms
 	console.log('connection!', socket.request._query);
+	console.log('connection!', socket.id);
 
 	var room_id = socket.request._query.room_id;
 	var name = socket.request._query.name || 'bob';
@@ -92,7 +85,7 @@ iorooms.on('connection', function(socket) {
 		player_idx = room.length;
 		if (player_idx >= 4) {
 			// room is full, inform client and abort
-			return socket.emit('lab_errorss', {room_id: room_id, reason: 'FULL'});
+			return socket.emit('lab_error', {room_id: room_id, reason: 'FULL'});
 		}
 	}
 
