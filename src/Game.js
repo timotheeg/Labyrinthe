@@ -18,6 +18,8 @@ var
 ;
 
 function Game(room_id, broadcaster, treasures_per_player) {
+	console.log(`NEW GAME: ${room_id}`);
+
 	this.room_id     = room_id;
 	this.broadcaster = broadcaster;
 	this.players     = [];
@@ -81,9 +83,49 @@ Game.prototype._getNextHand = function() {
 	);
 };
 
-Game.prototype.addPlayer = function(name, socket) {
+Game.prototype.attemptRejoin = function(name, client_id, socket) {
+	console.log("attemptRejoin");
+
+	const player = this.players.find(p => p.client_id === client_id);
+	if (!player) return null;
+
+	// this IS a rejoin, need to adjust the player and give it the setup
+	socket.join(this.room_id);
+
+	player._removeTO = clearTimeout(player._removeTO);
+	player.socket = socket;
+	player.listens();
+
+	// give the player everything needed to reset
+	socket.emit('registered', player._toJSON());
+	socket.emit('setup', {
+		players: this.getPlayers(),
+		board:   this.getBoard().toJSON()
+	});
+
+	// if the player is next to play, need to inform him now
+	if (this.turn_idx === player.index) {
+		// dang it, it's the current player turn, let's check what's the state...
+		player.setCurrent(true);
+
+		if (this.state = WAITING_SHIFT) {
+			this.broadcaster.emit('current_player', this.turn_idx);
+		}
+		else if (this.state = WAITING_MOVE) {
+			// Player was supposed to move, but too bad, we take reconnection as give up your turn penalty 🤷
+			this.nextTurn();
+		}
+	}
+
+	return player;
+}
+
+Game.prototype.addPlayer = function(name, client_id, socket) {
 	// create the new player object
+	socket.join(this.room_id);
+
 	var player = new Player(
+		client_id,
 		this.players.length,
 		socket,
 		name,
@@ -112,8 +154,16 @@ Game.prototype.addPlayer = function(name, socket) {
 	return player;
 };
 
+Game.prototype.scheduleRemovePlayer = function(player) {
+	console.log('scheduleRemovePlayer');
+	player._removeTO = setTimeout(() => {
+		this.removePlayer(player);
+	}, 120000)
+}
+
 Game.prototype.removePlayer = function(player) {
-	// Warning: this doesn't wor during a game
+	console.log('removePlayer');
+	// Warning: this doesn't work during a game
 	// TODO: make this more resilient
 	var idx = this.players.indexOf(player);
 

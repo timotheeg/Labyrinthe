@@ -2,7 +2,8 @@ var util = require('util');
 
 module.exports = Player;
 
-function Player(player_index, socket, name, treasures) {
+function Player(client_id, player_index, socket, name, treasures) {
+	this.client_id = client_id;
 	this.name = name;
 	this.index = player_index;
 	this.socket = socket;
@@ -11,7 +12,7 @@ function Player(player_index, socket, name, treasures) {
 	util._extend(this, Player.COLORS[player_index]);
 
 	this.treasures = treasures;
-	this.collected = 0;
+	this.collected = [];
 
 	this.listens();
 
@@ -54,23 +55,24 @@ Player.prototype._toJSON = function() {
 	var data = this.toJSON();
 
 	data.rotation = this.rotation,
-	data.next_treasure = this.treasures[this.collected];
+	data.next_treasure = this.treasures[this.collected.length];
 
 	return data;
 };
 
 Player.prototype.isDone = function() {
-	return this.collected >= this.treasures.length;
+	return this.collected.length >= this.treasures.length;
 };
 
 Player.prototype.isNextTreasure = function(treasure) {
-	return treasure == this.treasures[this.collected];
+	return treasure == this.treasures[this.collected.length];
 };
 
 Player.prototype.acquireTreasure = function() {
+	this.collected.push(this.treasures[this.collected.length])
 	this.socket.emit(
 		'next_treasure',
-		this.treasures[++this.collected]
+		this.treasures[this.collected.length]
 	);
 };
 
@@ -78,10 +80,11 @@ Player.prototype.listens = function() {
 	var self = this;
 
 	this.socket.on('disconnect', function() {
-		self.game.removePlayer(self);
+		self.game.scheduleRemovePlayer(self);
 	});
 
 	this.socket.on('start', function() {
+		console.log(`received start`);
 		if (!self.isCurrentPlayer()) return;
 
 		self.game.start();

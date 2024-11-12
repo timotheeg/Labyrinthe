@@ -59,6 +59,7 @@ iorooms.on('connection', function(socket) {
 	console.log('connection!', socket.id);
 
 	var room_id = socket.request._query.room_id;
+	var client_id = socket.request._query.client_id;
 	var name = socket.request._query.name || 'bob';
 	
 	if (!room_id) {
@@ -66,32 +67,33 @@ iorooms.on('connection', function(socket) {
 		return;
 	}
 	
+	// console.log(io.nsps['/rooms'].adapter.rooms);
 	var room = io.nsps['/rooms'].adapter.rooms[room_id];
-	
-	var player_idx = 0;
-	var game;
 
-	if (!room) {
+	var game = rooms.get(room_id);
+
+	if (!game) {
 		game = new Game(room_id, iorooms.to(room_id));
 		rooms.set(room_id, game);
 	}
 	else {
-		game = rooms.get(room_id);
+		// check if player is reconnecting
+		if (game.attemptRejoin(name, client_id, socket)) {
+			return;
+		}
 
 		if (!game.isPending()) {
 			return socket.emit('lab_error', {room_id: room_id, reason: 'STARTED'});
 		}
 
-		player_idx = room.length;
+		var player_idx = game.players.length;
 		if (player_idx >= 4) {
 			// room is full, inform client and abort
 			return socket.emit('lab_error', {room_id: room_id, reason: 'FULL'});
 		}
 	}
 
-	socket.join(room_id);
-
-	game.addPlayer(name, socket);
+	game.addPlayer(name, client_id, socket);
 });
 
 server.listen(30001);

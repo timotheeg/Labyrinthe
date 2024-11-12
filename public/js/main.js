@@ -329,7 +329,7 @@ function setPlayersSize(width, height) {
 				var card = player.treasures[idx];
 				card.scaleX = card.scaleY = self.__card_scale;
 				card.x = margin_w + (self.__card_h_space + self.__card_width) * (idx - 6);
-				card.y = margin_h * 2 + self.__card_height;
+				card.y = margin_h + (self.__card_v_space + self.__card_height);
 			}
 		}
 		catch(e) {
@@ -391,6 +391,14 @@ function setupPlayer(player) {
 	);
 
 	players_container.setSize();
+
+	// setup acquired treasures
+	player.collected.forEach(treasure => {
+		playerGetsTreasure({
+			treasure,
+			player,
+		})
+	});
 }
 
 function playerGetsTreasure(data) {
