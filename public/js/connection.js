@@ -17,13 +17,17 @@ function getRoomId() {
 	return location.pathname.split('/').pop();
 }
 
+function generateUniqSerial() {
+	return 'xxxx-xxxx-xxx-xxxx'.replace(/x/g, () => (Math.random() * 16 | 0).toString(16));
+}
+
 function getClientId() {
 	const roomid = getRoomId();
 	const storeKey = `${roomid}-clientid`
 	let clientid = sessionStorage.getItem(storeKey);
 
 	if (!clientid) {
-		clientid = crypto.randomUUID();
+		clientid = crypto?.randomUUID?.() || generateUniqSerial();
 		sessionStorage.setItem(storeKey, clientid);
 	}
 
