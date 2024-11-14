@@ -93,6 +93,8 @@ function init() {
 	queue = new createjs.LoadQueue(false);
 	queue.on("complete", connectSocket, this);
 	
+	queue.loadFile({id: 'locked', src: '/img/tiles/locked.webp'});
+
 	for (var key in tiles) {
 		queue.loadFile({id: key, src: tiles[key]});
 	}
@@ -212,6 +214,7 @@ function setupBoard(board_setup) {
 	ctrl_piece = getPiece( board_setup.ctrl );
 	ctrl_piece.addEventListener('click', rotateControl);
 
+	controls_container.control.removeAllChildren();
 	controls_container.control.addChild(ctrl_piece);
 
 	for (var row_idx=0; row_idx<GRID_SIZE; row_idx++) {
@@ -219,7 +222,7 @@ function setupBoard(board_setup) {
 			var mc;
 			
 			if (board_setup.board[row_idx][col_idx]) {
-				mc = getPiece(board_setup.board[row_idx][col_idx][0], board_setup.board[row_idx][col_idx][1]);
+				mc = getPiece(board_setup.board[row_idx][col_idx][0], board_setup.board[row_idx][col_idx][1], row_idx % 2 === 0 && col_idx % 2 === 0);
 			}
 			else {
 				mc = getPiece();
@@ -372,11 +375,16 @@ function setControlsSize(width, height) {
 
 function setupPlayer(player) {
 	if (players[player.color]) {
-		$.extend(players[player.color], player);
-		return;
+		// clear all the visual attached to the player
+		players[player.color].marker?.parent?.removeChild(players[player.color].marker);
+		players[player.color].status?.treasures?.forEach(card => {;
+			card.parent.removeChild(card);
+		});
+		players[player.color].status?.removeChild(players[player.color].status?.bg);
 	}
 
 	players[player.color] = player;
+	players_arr[player.index] = player;
 
 	// create player marker and place it on the board
 	player.marker = getPlayerMarker(player.color);
@@ -384,9 +392,8 @@ function setupPlayer(player) {
 	grid7x7[player.y][player.x].addChild(player.marker);
 
 	// set up player grid
-	players_arr.push(player);
 	player.status = getPlayerStatus(
-		players_container['player' + players_arr.length],
+		players_container['player' + (player.index + 1)],
 		player.color
 	);
 
@@ -671,7 +678,7 @@ function getCard(treasure_name) {
 	return mc;
 }
 
-function getPiece(name, rotation) {
+function getPiece(name, rotation, locked) {
 	if (rotation === undefined || rotation === -1) rotation = Math.floor(Math.random() * 4) * 90;
 
 	var tile, treasure, bg;
@@ -690,10 +697,6 @@ function getPiece(name, rotation) {
 
 	var mc = new createjs.Container();
 	bg.snapToPixel = true;
-	mc.snapToPixel = true;
-	mc.regX = mc.regY = HALF_SIZE;
-	mc.x = mc.y = HALF_SIZE;
-	mc.rotation = rotation;
 	mc.addChild(bg);
 	
 	if (treasure) {
@@ -703,7 +706,16 @@ function getPiece(name, rotation) {
 		treasure.rotation = tile.r;
 		mc.addChild(treasure);
 	}
+
+	// if (locked) {
+	// 	const locked_highlight = new createjs.Bitmap(queue.getResult('locked'));
+	// 	mc.addChild(locked_highlight);
+	// }
 	
+	mc.snapToPixel = true;
+	mc.regX = mc.regY = HALF_SIZE;
+	mc.x = mc.y = HALF_SIZE;
+	mc.rotation = rotation;
 	piece.addChild(mc);
 	
 	piece.lab_meta = {
