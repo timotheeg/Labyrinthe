@@ -86,8 +86,7 @@ iorooms.on('connection', function(socket) {
 			return socket.emit('lab_error', {room_id: room_id, reason: 'STARTED'});
 		}
 
-		var player_idx = game.players.length;
-		if (player_idx >= 4) {
+		if (game.isFull()) {
 			// room is full, inform client and abort
 			return socket.emit('lab_error', {room_id: room_id, reason: 'FULL'});
 		}
